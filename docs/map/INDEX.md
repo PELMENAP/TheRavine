@@ -14,7 +14,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Core/ServiceLocator` | 3 | 311 |
 | `Assets/Scripts/Core/Settings` | 5 | 904 |
 | `Assets/Scripts/Core/Settings/GameSettings` | 2 | 110 |
-| `Assets/Scripts/Core/Settings/WorldData` | 7 | 614 |
+| `Assets/Scripts/Core/Settings/WorldData` | 7 | 683 |
 | `Assets/Scripts/Core/Settings/WorldSettings` | 2 | 142 |
 | `Assets/Scripts/Core/Storage` | 5 | 352 |
 | `Assets/Scripts/Core/Timer` | 4 | 271 |
@@ -22,25 +22,26 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 19 | 2317 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
-| `Assets/Scripts/EntitySystem/AI` | 12 | 2541 |
+| `Assets/Scripts/EntitySystem/AI` | 12 | 2620 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
-| `Assets/Scripts/EntitySystem/AI/Codex` | 10 | 936 |
-| `Assets/Scripts/EntitySystem/AI/Colony` | 9 | 944 |
-| `Assets/Scripts/EntitySystem/AI/Debug` | 6 | 2411 |
+| `Assets/Scripts/EntitySystem/AI/Codex` | 10 | 939 |
+| `Assets/Scripts/EntitySystem/AI/Colony` | 9 | 972 |
+| `Assets/Scripts/EntitySystem/AI/Debug` | 7 | 3025 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 906 |
-| `Assets/Scripts/EntitySystem/AI/Entity` | 18 | 2956 |
-| `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1519 |
+| `Assets/Scripts/EntitySystem/AI/Entity` | 19 | 3139 |
+| `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1602 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 695 |
 | `Assets/Scripts/EntitySystem/AI/Flock` | 1 | 230 |
 | `Assets/Scripts/EntitySystem/AI/Instinct` | 1 | 441 |
 | `Assets/Scripts/EntitySystem/AI/LSTM` | 2 | 257 |
 | `Assets/Scripts/EntitySystem/AI/Nest` | 1 | 394 |
-| `Assets/Scripts/EntitySystem/AI/Perception` | 10 | 2360 |
-| `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 579 |
-| `Assets/Scripts/EntitySystem/AI/Population` | 7 | 1408 |
-| `Assets/Scripts/EntitySystem/AI/Rules` | 11 | 3353 |
-| `Assets/Scripts/EntitySystem/AI/SharedAI` | 24 | 3854 |
+| `Assets/Scripts/EntitySystem/AI/Perception` | 10 | 2377 |
+| `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 589 |
+| `Assets/Scripts/EntitySystem/AI/Population` | 8 | 1505 |
+| `Assets/Scripts/EntitySystem/AI/Rules` | 13 | 3590 |
+| `Assets/Scripts/EntitySystem/AI/SharedAI` | 24 | 3867 |
 | `Assets/Scripts/EntitySystem/AI/Skills` | 19 | 2174 |
+| `Assets/Scripts/EntitySystem/AI/Social` | 2 | 296 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 8 | 1273 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
 | `Assets/Scripts/EntitySystem/Casino` | 4 | 806 |
@@ -116,6 +117,8 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 948 |
 | `Assets/Tests/EditMode` | 77 | 12691 |
+| `Assets/Scripts/UI/SkillGraph` | 8 | 945 |
+| `Assets/Tests/EditMode` | 83 | 13840 |
 
 ## Assemblies
 
@@ -236,7 +239,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | ExpressionStatementNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 121 |
 | Extension | class | `Assets/Scripts/Core/Utilities/Extentions.cs` | 7 |
 | FaderOnTransit | class | `Assets/Scripts/Core/Fader.cs` | 9 |
-| FamiliarityMath | class | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Social.cs` | 238 |
+| FamiliarityMath | class | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Social.cs` | 269 |
 | FarBatchMath | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Rendering/FarObjectRenderer.cs` | 491 |
 | FarMode | enum | `Assets/Scripts/ObjectSystem/ObjectInfo/ObjectInfo.cs` | 139 |
 | FeedingLatchTests | class | `Assets/Tests/EditMode/StartleTests.cs` | 82 |
@@ -247,6 +250,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | FoodClaim | struct | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 29 |
 | FoodKind | enum | `Assets/Scripts/ObjectSystem/ObjectInfo/ObjectInfo.cs` | 146 |
 | FoodTraits | struct | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 22 |
+| FoodZone | struct | `Assets/Scripts/EntitySystem/AI/Population/ExperimentScenario.cs` | 16 |
 | ForLoopNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 81 |
 | ForwardItem | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 8 |
 | FunctionCallNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 41 |
@@ -262,6 +266,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | HeightFromReliefJob | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 639 |
 | HeightWindow | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/TerrainMeshJobs.cs` | 12 |
 | HelpCommand | class | `Assets/Scripts/Terminal/BaseCommands.cs` | 11 |
+| HelpEntry | struct | `Assets/Scripts/EntitySystem/AI/Social/HelpLog.cs` | 5 |
 | HostState | struct | `Assets/Scripts/EntitySystem/Virology/Ribosome.cs` | 72 |
 | IAimComponent | interface | `Assets/Scripts/Model/BehavioursMap/Aim/AimComponent.cs` | 13 |
 | ICameraComponent | interface | `Assets/Scripts/EntitySystem/Entityes/CameraComponent.cs` | 8 |
@@ -363,7 +368,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | PlanHint | enum | `Assets/Scripts/EntitySystem/AI/Plans/PlanCatalog.cs` | 37 |
 | PlanJob | struct | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | 53 |
 | PlanKind | enum | `Assets/Scripts/EntitySystem/AI/Plans/PlanCatalog.cs` | 3 |
-| PlanProgress | struct | `Assets/Scripts/EntitySystem/AI/Plans/PlanCatalog.cs` | 77 |
+| PlanProgress | struct | `Assets/Scripts/EntitySystem/AI/Plans/PlanCatalog.cs` | 78 |
 | PlanRequest | struct | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | 10 |
 | PlanResult | struct | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | 28 |
 | PlanWeights | struct | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | 34 |
@@ -403,6 +408,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | RndTrainJob | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/RandomNetworkDistillation.cs` | 170 |
 | RotateCommand | class | `Assets/Scripts/Terminal/GeneratorCommands.cs` | 12 |
 | SaveScriptCommand | class | `Assets/Scripts/Terminal/Rive/RiveRedactorCommands.cs` | 286 |
+| ScenarioColony | class | `Assets/Scripts/EntitySystem/AI/Population/ExperimentScenario.cs` | 5 |
 | SceneLoader | class | `Assets/Scripts/Core/SceneTransition.cs` | 6 |
 | ScriptInfoCommand | class | `Assets/Scripts/Terminal/Rive/RiveRedactorCommands.cs` | 146 |
 | SendToInteractorNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 49 |
@@ -422,6 +428,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | SlotKindExtensions | class | `Assets/Scripts/Model/InventoryModel/SlotKind.cs` | 31 |
 | SlotLine | struct | `Assets/Scripts/EntitySystem/Casino/CasinoSlots.cs` | 391 |
 | SlotMask | enum | `Assets/Scripts/Model/InventoryModel/SlotKind.cs` | 16 |
+| SocialReliefMath | class | `Assets/Scripts/EntitySystem/AI/Social/SocialRelief.cs` | 3 |
 | SpatialGrid | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ObjectGenerator/SpawnLayerJob.cs` | 206 |
 | SpawnLayer | enum | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ObjectGenerator/ObjectGeneratorStructures.cs` | 60 |
 | SpawnPointDataHeight | struct | `Assets/Scripts/EntitySystem/MobGenerator.cs` | 255 |
@@ -433,8 +440,8 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | StringBuilderNumeric | class | `Assets/Scripts/EntitySystem/AI/Debug/NestDebugView.cs` | 305 |
 | StructureSpawnPoint | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1842 |
 | SurveyInput | struct | `Assets/Scripts/EntitySystem/AI/Perception/SurveySystem.cs` | 8 |
-| SurveyJob | struct | `Assets/Scripts/EntitySystem/AI/Perception/SurveySystem.cs` | 42 |
-| SurveyOutput | struct | `Assets/Scripts/EntitySystem/AI/Perception/SurveySystem.cs` | 24 |
+| SurveyJob | struct | `Assets/Scripts/EntitySystem/AI/Perception/SurveySystem.cs` | 44 |
+| SurveyOutput | struct | `Assets/Scripts/EntitySystem/AI/Perception/SurveySystem.cs` | 25 |
 | TeleportCommand | class | `Assets/Scripts/Terminal/SetPlayerCommand.cs` | 26 |
 | TerminalCommandNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 89 |
 | TerrainIndexBuilder | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/TerrainMeshJobs.cs` | 168 |

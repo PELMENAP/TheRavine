@@ -106,7 +106,11 @@ public partial class EntityModel
         }
         UpdateHeading();
         float stressTau = IsAtNest ? rules.StressTau / math.max(rules.StressNestRecoveryMul, 1f) : rules.StressTau;
+        float stressBefore = Stress;
         Stress    *= math.exp(-dt / math.max(stressTau, 1e-3f));
+        if (IsAtNest && stressBefore > 0f)
+            Colony?.Stats.RecordRelief(ColonyStats.ReliefKind.Nest,
+                stressBefore * (math.exp(-dt / math.max(rules.StressTau, 1e-3f)) - math.exp(-dt / math.max(stressTau, 1e-3f))));
         UpdateOrnsteinUhlenbeck(dt, in rules);
 
         _season         = SeasonClock.Value(now);
@@ -140,7 +144,8 @@ public partial class EntityModel
         if (!IsAliveForTick()) return false;
 
         Vector3 pos  = Motor.Position();
-        float detect = Tuning.DetectionRadius * math.max(rules.BlindMinDetectionFraction, 1f - mods.Blind * rules.BlindStrength);
+        float detect = Tuning.DetectionRadius * math.max(rules.BlindMinDetectionFraction, 1f - mods.Blind * rules.BlindStrength)
+                     * CreatureCore.StressRadiusMul(StressEffect, in rules);
 
         var victim   = RecentVictim;
         var familiar = _harmModel;
@@ -149,6 +154,7 @@ public partial class EntityModel
             Position      = new float3(pos.x, pos.y, pos.z),
             NearestRadius = detect,
             CrowdRadius   = rules.CrowdRadius,
+            KinRadius     = rules.StressSourcesEnabled ? rules.LonelinessRadius : 0f,
             ColonyIndex   = Colony != null ? Colony.Index : -1,
             CrowdCap      = Neighbors.Length,
             SelfSlot      = GridSlot,
@@ -188,6 +194,7 @@ public partial class EntityModel
         _nearestDistance = _nearest != null ? survey.NearestDistance : -1f;
         _crowd           = survey.Crowd;
         _kinCrowd        = survey.Kin;
+        _kinNear         = survey.KinNear;
         _nearestForeign  = Perception.ResolveSlot(survey.ForeignSlot);
         _nearestForeignDistance = _nearestForeign != null ? survey.ForeignDistance : -1f;
         float outnumbered = math.saturate((_crowd - _kinCrowd - _kinCrowd) / math.max(rules.OutnumberedNorm, 1e-3f));
@@ -229,6 +236,7 @@ public partial class EntityModel
         _nestFood = ComputeNestFood(nest, in rules);
         UpdateTerritory(nest, in self, dt, in rules);
         ComputeDirections(nest, in self, in foodPos, in rules);
+        if (rules.MaskTaskSignal) _dirMask &= unchecked((ushort)~(1 << (int)DirectionKind.Task));
 
         if (!_terrain.TrySample(pos.x, pos.z, out _lastTerrain))
             _lastTerrain = TerrainSample.Invalid;
@@ -328,8 +336,11 @@ public partial class EntityModel
         float digested = Digestion.Tick(Stats, dt, resting, digestMul, mods.RegenMultiplier, in rules, out float regenCredit, out float digestLoss);
         Brain.Context.GoalDigested += digested - digestLoss;
 
+        float environmentMul = CreatureCore.EnvironmentDrainMul(Digestion.WellFed, night && !IsAtNest, mods.Fever, _winter, in rules, _dormant);
+        UpdateStress(dt, environmentMul, night, in rules);
         float basalMul = Tuning.BasalDrainMul
-                       * CreatureCore.EnvironmentDrainMul(Digestion.WellFed, night && !IsAtNest, mods.Fever, _winter, in rules, _dormant)
+                       * environmentMul
+                       * CreatureCore.StressDrainMul(StressEffect, in rules)
                        * SenescenceMul(in rules)
                        * _immuneUpkeepMul;
 
@@ -555,6 +566,8 @@ public partial class EntityModel
         if (colony != null && CasteFixed && !IsJuvenile && colony.QuorumReady) h |= PlanHint.QuorumReady;
         if (nest != null && Caste == Caste.Worker && CasteFixed && !IsJuvenile && !IsHungry) h |= PlanHint.PreferPickUp;
         if (_kinSick) h |= PlanHint.KinSick;
+        if (r.SocialReliefEnabled && CachedNearest != null && CachedNearest.Colony == Colony && CachedNearest.Stress >= r.ComfortMinStress)
+            h |= PlanHint.KinStressed;
         if (_targetWeak) h |= PlanHint.TargetWeak;
         if (_night) h |= PlanHint.Night;
         return h;

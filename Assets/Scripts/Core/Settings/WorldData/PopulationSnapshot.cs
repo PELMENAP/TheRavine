@@ -7,7 +7,9 @@ namespace TheRavine.Base
 {
     public sealed class PopulationSnapshot
     {
-        public const int Version = 1;
+        public const int Version = 3;
+        public const int MaxHelpEntries = 32;
+        public const int MinVersion = 1;
         public const int GeneCount = 53;
         public const int MaxAgents = 65536;
         public const int MaxColonies = 256;
@@ -21,6 +23,13 @@ namespace TheRavine.Base
             public double ElectionRemaining;
         }
 
+        public struct HelpRecord
+        {
+            public int Partner;
+            public float Balance, ComfortAccum;
+            public float BalanceAge, ComfortAge, GaveAge, ReceivedAge, MetAge;
+        }
+
         public struct Agent
         {
             public int Id, ColonyId, Parent;
@@ -29,6 +38,9 @@ namespace TheRavine.Base
             public double AttackRemaining, ReviewRemaining;
             public byte Caste;
             public bool Fixed;
+            public float Stress, LonelySeconds;
+            public byte StressLevel;
+            public HelpRecord[] Help;
             public float[] Genes;
         }
 
@@ -48,6 +60,8 @@ namespace TheRavine.Base
         private static bool Duration(double value) => value >= 0 && !double.IsInfinity(value);
 
         private static bool PositiveOrZero(float value) => value >= 0 && Finite(value);
+
+        private static bool AgeOrNever(float value) => (value >= 0 || value == -1) && Finite(value);
 
         public void Validate(int seed, long created)
         {
@@ -73,6 +87,12 @@ namespace TheRavine.Base
                 Require(a.Caste < 4 && WorldCoordinate(a.Position.x) && WorldCoordinate(a.Position.y) && WorldCoordinate(a.Position.z), "invalid caste or position");
                 Require(PositiveOrZero(a.Age) && a.Health > 0 && Finite(a.Health) && PositiveOrZero(a.Energy) &&
                     PositiveOrZero(a.Stomach) && PositiveOrZero(a.Carrying) && Duration(a.AttackRemaining) && Duration(a.ReviewRemaining), "invalid vitals");
+                Require(Finite(a.Stress) && a.Stress >= 0 && a.Stress <= 1 && PositiveOrZero(a.LonelySeconds) && a.StressLevel <= 2, "invalid stress state");
+                Require(a.Help == null || a.Help.Length <= MaxHelpEntries, "too many help entries");
+                if (a.Help != null)
+                    foreach (var h in a.Help)
+                        Require(h.Partner != 0 && Finite(h.Balance) && PositiveOrZero(h.ComfortAccum) && AgeOrNever(h.BalanceAge) && AgeOrNever(h.ComfortAge) &&
+                            AgeOrNever(h.GaveAge) && AgeOrNever(h.ReceivedAge) && AgeOrNever(h.MetAge), "invalid help entry");
                 Require(a.Genes != null && a.Genes.Length == GeneCount, "unexpected phenotype shape");
                 foreach (float gene in a.Genes) Require(Finite(gene), "non-finite phenotype");
             }

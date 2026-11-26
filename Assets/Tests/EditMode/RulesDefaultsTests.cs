@@ -193,4 +193,48 @@ public class RulesDefaultsTests
             SimulationRules.Bind(null);
         }
     }
+
+    [Test]
+    public void SystemFlagsAndMasksAreOffByDefault()
+    {
+        var r = _rules;
+        Assert.IsFalse(r.StressSourcesEnabled);
+        Assert.IsFalse(r.SocialReliefEnabled);
+        Assert.IsFalse(r.HelpLogEnabled);
+        Assert.IsFalse(r.TaskBoardEnabled);
+        Assert.IsFalse(r.DepotsEnabled);
+        Assert.IsFalse(r.TrailsEnabled);
+        Assert.IsFalse(r.HuddlingEnabled);
+        Assert.IsFalse(r.SheltersEnabled);
+        Assert.IsFalse(r.MaskStressInput);
+        Assert.IsFalse(r.MaskTaskSignal);
+        Assert.AreEqual(
+            "stress_sources=0 social_relief=0 help_log=0 task_board=0 depots=0 trails=0 huddling=0 shelters=0 mask_stress_input=0 mask_task_signal=0",
+            r.SystemFlagsLabel());
+    }
+
+    [Test]
+    public void SystemFlagsInTheAssetAreOff()
+    {
+        var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<SimulationRules>("Assets/Scripts/EntitySystem/AI/SimulationRules.asset");
+        Assert.IsNotNull(asset);
+        Assert.IsFalse(asset.StressSourcesEnabled || asset.SocialReliefEnabled || asset.HelpLogEnabled || asset.TaskBoardEnabled);
+        Assert.IsFalse(asset.DepotsEnabled || asset.TrailsEnabled || asset.HuddlingEnabled || asset.SheltersEnabled);
+        Assert.IsFalse(asset.MaskStressInput || asset.MaskTaskSignal);
+    }
+
+    [Test]
+    public void FrameMirrorsTheSignalMasks()
+    {
+        SimulationRules.Bind(_rules);
+        try
+        {
+            Assert.IsFalse(SimulationRules.Frame.MaskStressInput);
+            Assert.IsFalse(SimulationRules.Frame.MaskTaskSignal);
+        }
+        finally
+        {
+            SimulationRules.Bind(null);
+        }
+    }
 }

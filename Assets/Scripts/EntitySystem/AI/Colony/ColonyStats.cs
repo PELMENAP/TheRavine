@@ -65,6 +65,32 @@ public sealed class ColonyStats
 
     public void RecordInteraction(Interaction kind, double amount = 1d) => Interactions[(int)kind] += amount;
 
+    public enum StressSource : byte { Threat, Hunger, Cold, Lonely, Task, Count }
+
+    public readonly double[] StressAdded = new double[(int)StressSource.Count];
+    public double StressSeconds;
+    public double StressHighSeconds;
+
+    public enum ReliefKind : byte { Comfort, Feed, Rest, Nest, Count }
+
+    public readonly double[] ReliefSum = new double[(int)ReliefKind.Count];
+    public int ComfortStarted;
+    public int ComfortCompleted;
+    public int GiveTransfers;
+    public int GiveReciprocal;
+
+    public void RecordRelief(ReliefKind kind, float amount) => ReliefSum[(int)kind] += amount;
+    public void RecordComfortStarted() => ComfortStarted++;
+    public void RecordComfortCompleted() => ComfortCompleted++;
+
+    public void RecordStress(StressSource source, float amount) => StressAdded[(int)source] += amount;
+
+    public void RecordStressTime(float dt, bool high)
+    {
+        StressSeconds += dt;
+        if (high) StressHighSeconds += dt;
+    }
+
     public void RecordBirth() => Born++;
 
     public void RecordDeath(float lifespan, DeathCause cause)

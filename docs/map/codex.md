@@ -5,7 +5,7 @@ Tests: `Assets/Tests/EditMode/CodexMathTests.cs`, `Assets/Tests/EditMode/WorldCo
 ## Entry points
 | Type | File | Role |
 |---|---|---|
-| `WorldCodexService` | `Assets/Scripts/EntitySystem/AI/Codex/WorldCodexService.cs` | Laws, opposition, θ; `TryPropose`, `TryInvest`, `TryOppose`, `Step`, `Capture`, `Restore`; registered in `ServiceLocator` |
+| `WorldCodexService` | `Assets/Scripts/EntitySystem/AI/Codex/WorldCodexService.cs` | Laws, opposition, θ; `TryPropose`, `TryInvest`, `TryOppose`, `Step`, `Capture`, `Restore`; registered in `ServiceLocator`; `Anomalies` is an optional read-only sink of successful investments (`AnomalyDetector`) |
 | `CodexMath` | `Assets/Scripts/EntitySystem/AI/Codex/CodexMath.cs` | Pure formulas: `Aggregate`, `Cost`, `VoteGain`, `Decay`, `Multipliers` |
 | `LawRecord` | `Assets/Scripts/EntitySystem/AI/Codex/LawRecord.cs` | Blittable law: delta per `VarianceAxis`, author, support, creation time |
 | `CodexPriceEstimator` | `Assets/Scripts/EntitySystem/AI/Codex/CodexPriceEstimator.cs` | Recursive least squares of net energy balance on θ |
