@@ -1,5 +1,24 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-7074499896310812621
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b54f479dd2b53214d9b967ed23644306, type: 3}
+  m_Name: WaterUnderwaterFeature
+  m_EditorClassIdentifier: Assembly-CSharp::WaterUnderwaterFeature
+  m_Active: 1
+  settings:
+    effectMaterial: {fileID: 2100000, guid: cb91006f67ab5bc448b3ea91998ba694, type: 2}
+    enableCaustics: 1
+    enableUnderwaterPost: 1
+    defaultWaterLevel: 5.3
+    nearPlaneMargin: 0.3
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25,8 +44,9 @@ MonoBehaviour:
     probeSamplingDebugTexture: {fileID: 2800000, guid: 24ec0e140fb444a44ab96ee80844e18e, type: 3}
     probeVolumeBlendStatesCS: {fileID: 0}
   m_RendererFeatures:
-  - {fileID: 2877314097353932509}
-  m_RendererFeatureMap: dd3e0148ed45ee27
+  - {fileID: 7016496531193140553}
+  - {fileID: -7074499896310812621}
+  m_RendererFeatureMap: 4915878d6b9a5f613330db9cd353d29d
   m_UseNativeRenderPass: 0
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   m_AssetVersion: 3
@@ -54,7 +74,7 @@ MonoBehaviour:
   m_DepthTextureFormat: 0
   m_AccurateGbufferNormals: 1
   m_IntermediateTextureMode: 0
---- !u!114 &2877314097353932509
+--- !u!114 &7016496531193140553
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -63,14 +83,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b00045f12942b46c698459096c89274e, type: 3}
-  m_Name: FullScreenPassRendererFeature
-  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.FullScreenPassRendererFeature
+  m_Script: {fileID: 11500000, guid: 870e746bccad45d499dac02f3662c33c, type: 3}
+  m_Name: VolumetricFogFeature
+  m_EditorClassIdentifier: Assembly-CSharp::VolumetricFogFeature
   m_Active: 1
-  injectionPoint: 550
-  fetchColorBuffer: 1
-  requirements: 0
-  passMaterial: {fileID: 2100000, guid: 74fe1c83c420485ccb86ad4071a7abd0, type: 2}
-  passIndex: 0
-  bindDepthStencilAttachment: 0
-  m_Version: 1
+  settings:
+    fogMaterial: {fileID: 2100000, guid: 74fe1c83c420485ccb86ad4071a7abd0, type: 2}
+    renderPassEvent: 550
+    resolution: 2
+    densityCutoff: 0.0002
+    renderInSceneView: 1

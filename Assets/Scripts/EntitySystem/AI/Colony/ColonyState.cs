@@ -9,6 +9,7 @@ public sealed class ColonyState : IDisposable
     public readonly NestState Nest;
     public SharedHierarchicalBrain Brain { get; private set; }
     public string BrainOrigin { get; private set; } = "fresh";
+    public int BrainDonorId { get; private set; }
     public const int TrainingGroups = 1 + SharedHierarchicalBrain.GoalCount;
     private readonly long[] _previousTraining = new long[TrainingGroups];
 
@@ -25,6 +26,7 @@ public sealed class ColonyState : IDisposable
     public double NextElection;
     public readonly int[] CasteCounts = new int[(int)Caste.Count];
     public int JuvenileCount;
+    public int GuestCount;
     public SkillGraphTopology SkillTopology { get; private set; }
     public double NextSkillSolve;
 
@@ -98,6 +100,11 @@ public sealed class ColonyState : IDisposable
     public static float SiteScore(in SimulationRules.RulesFrame r, in TerrainSample terrain, float foodField, float nestDistance)
     {
         if (!(nestDistance >= r.QuorumMinDistance && nestDistance <= r.QuorumMaxDistance)) return 0f;
+        return TerrainSiteScore(in r, in terrain, foodField);
+    }
+
+    public static float TerrainSiteScore(in SimulationRules.RulesFrame r, in TerrainSample terrain, float foodField)
+    {
         float flat   = math.saturate(1f - terrain.Slope / math.max(r.QuorumSlopeLimit, 1e-3f));
         float height = math.saturate(1f + math.min(terrain.RelativeHeight, 0f) * r.QuorumDepressionMul);
         float food   = math.saturate(foodField / math.max(r.QuorumFoodNorm, 1e-3f));
@@ -239,14 +246,31 @@ public sealed class ColonyState : IDisposable
         SkillTopology = SkillGraphTopology.Create(SkillAtlas.Active, SkillGraphTopology.DrawForestGenes());
     }
 
-    public void ReplaceBrain(SharedHierarchicalBrain brain, string origin = "reseeded")
+    public void ReplaceBrain(SharedHierarchicalBrain brain, string origin = "reseeded", int donorColonyId = 0)
     {
         if (ReferenceEquals(Brain, brain)) return;
         for (int i = 0; i < TrainingGroups; i++) _previousTraining[i] += CurrentTrainingSteps(i);
         BrainOrigin = origin;
+        BrainDonorId = donorColonyId;
         Brain = brain;
         brain?.SetArm(Arm, false);
         brain?.SetLearningGenes(Genome);
+    }
+
+    public int AdultCount
+    {
+        get
+        {
+            int n = 0;
+            for (int i = 0; i < CasteCounts.Length; i++) n += CasteCounts[i];
+            return n;
+        }
+    }
+
+    public void ResetGenome()
+    {
+        Genome = ColonyGenome.Initial(SimulationRules.Active.ColonyGenomeInitialSpread);
+        Brain?.SetLearningGenes(Genome);
     }
 
     public void InheritGenome(in ColonyGenome parent)

@@ -322,7 +322,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3224021413022219001, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: m_InScenePlaced
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3224021413022219001, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: GlobalObjectIdHash
@@ -686,8 +686,20 @@ PrefabInstance:
       value: 126
       objectReference: {fileID: 0}
     - target: {fileID: 6871818272072717940, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
+      propertyPath: damping
+      value: 0.99
+      objectReference: {fileID: 0}
+    - target: {fileID: 6871818272072717940, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
+      propertyPath: simCompute
+      value: 
+      objectReference: {fileID: 7200000, guid: c4cda81cee7025842bb33c4d60838a1b, type: 3}
+    - target: {fileID: 6871818272072717940, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
       propertyPath: textureSize
       value: 1024
+      objectReference: {fileID: 0}
+    - target: {fileID: 6871818272072717940, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
+      propertyPath: waveSpeedMetersPerSec
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 3802184848743760996, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}

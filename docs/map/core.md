@@ -33,13 +33,17 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 6. Service order, roughly: Bootstrap `DayCycle`, `AmbientSystem`; Initial `ObjectSystem`, `EntitySystem`, `MobController`; Loading `MapGenerator`, `MobGenerator`, `UIInventory`, `PauseUI`.
 7. Bootstrap.SwitchToMainMenu saves the world before starting the fade. A failed checkpoint leaves the scene running.
 8. ReleaseServices runs after the fade and before LoadSceneAsync.
-9. `ReleaseServices`: `EntityManager` disabled → `BreakUpServices` → `EntityManager.ReleaseServices` → Netcode `Shutdown` → `ClearAll`. It then runs `InitializeServices` for an explicit return to the menu.
+9. `ReleaseServices`: `EntityManager` disabled → `BreakUpServices` → `EntityManager.ReleaseServices` → Netcode `Shutdown` → `ClearAll`.
+   It then runs `InitializeServices` for an explicit return to the menu.
 10. Each step of `ReleaseServices` is guarded: a failing step is logged and the next ones still run.
 11. The game scene keeps running for several frames after `ReleaseServices`, until the menu scene activates.
 12. `GameInitializer.OnDestroy` (active `Instance` only): `ServiceLocator.ClearAll()` and `RavineLog.Shutdown()`.
 
 ## Services
 
+- New services register in `ServiceLocator`.
+- Legacy static `Instance` classes, not a pattern for new code: `MusicSystem`, `AmbientSystem`, `AudioService`, `SFXSystem`, `UISoundSystem`,
+  `RippleStampSystem`, `GameInitializer`, `FaderOnTransit`, `DialogSystem`.
 - `ServiceContainer.Register` returns `false` on a repeated type or on `null`; it never replaces.
 - All registrations go through `ServiceLocator.Register`, which logs a failure through `RavineLogger`.
 - Scene services leave through `ServiceContainer.Unregister(instance)`, which removes only that instance.
@@ -54,7 +58,8 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 - Repository layer: `IFileManager` in `Assets/Scripts/Core/Storage/IFileManager.cs`.
 - `WorldRegistry` serializes checkpoint requests from autosave, explicit save, pause and orderly scene exit. Before-save hooks bind to the loaded world session.
 - A population provider captures on the main thread before chunk flush. Population publication follows successful player, codex, configuration and chunk saves.
-- `PopulationRepository` stores version 3 in `worlds/{worldId}/population.bin` and reads versions 1 and 2 (records without stress, or without the help log). Seed and world creation time bind the file across renames.
+- `PopulationRepository` stores version 3 in `worlds/{worldId}/population.bin` and reads versions 1 and 2 (records without stress, or without the help log).
+  Seed and world creation time bind the file across renames.
 - A missing file is legacy state. Invalid bounds, references or versions cause a load error and preserve the file. A valid empty file is a saved population.
 - `WorldStateRepository` key `world_data_{id}`; `WorldConfigRepository` key `world_settings_{id}`.
 - `GlobalSettingsRepository` key `global_game_settings`; `ScriptFileManager` key `script_file_{name}`.
@@ -91,6 +96,10 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 - `Assets/Scripts/Core/Utilities/`: `PriorityQueue`, `IndexedSet`, `IntDictionary`, `LongDictionary`, `Position2Int`, `EnumerableSnapshot`.
 - `Position2Int.Pack` is the cell and chunk key used across the project.
 - `RavineRandom` is declared in `Assets/Scripts/Model/BehavioursMap/Random/FastRandom.cs`.
+
+## Tooling
+
+- CI: `.github/workflows/unity-tests.yml` compiles the project and runs the EditMode tests on push to `claude/**`; it is skipped without the UNITY_LICENSE secret.
 
 ## Invariants
 

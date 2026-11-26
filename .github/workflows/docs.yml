@@ -14,3 +14,5 @@ jobs:
           python-version: "3.x"
       - name: Paths and names in the documentation exist in the code
         run: python3 tools/docmap.py check
+      - name: RulesFrame is generated from the marked fields
+        run: python3 tools/rulesframe.py check

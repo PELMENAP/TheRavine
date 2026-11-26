@@ -592,6 +592,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private EntitySpatialGrid _grid;
     private SpeechBus _speechBus;
     private BehaviourDescriptorLog _descriptors;
+    private BehaviourMotifLog _motifs;
     private readonly float[] _predisposition = new float[SimulationRules.PredispositionSize];
     private static readonly EntityModel[] Neighbors = new EntityModel[16];
 
@@ -703,6 +704,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
         ServiceLocator.Services.TryGet(out _speechBus);
         ServiceLocator.Services.TryGet(out _descriptors);
+        ServiceLocator.Services.TryGet(out _motifs);
         ServiceLocator.Services.TryGet(out _helpLog);
         Speech = new SpeechComponent();
         _voice = SpeechVoiceBank.ClassOf(in ctx.CoordMLP.Params);

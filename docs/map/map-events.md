@@ -8,7 +8,7 @@ Tests: `Assets/Tests/EditMode/FireMathTests.cs`, `Assets/Tests/EditMode/WildWind
 |---|---|---|
 | `GlobalMapEvents` | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/GlobalMapEvents.cs` | Owns the map events; created, ticked and disposed by `MapGenerator` (`MapGenerator.Events`) |
 | `IMapEvent` | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/IMapEvent.cs` | One event: `Step(now, dt)` on the authority, `Render(camera)` everywhere; also `IMapSeason` |
-| `MapEventRules` | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/MapEventRules.cs` | Rules asset of all events (`fire` is a `FireRules`); `MapGenerator.mapEventRules`, defaults with a warning when unset |
+| `MapEventRules` | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/MapEventRules.cs` | Rules asset of all events (`fire` is a `FireRules`) |
 | `FireEvent` | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireEvent.cs` | Fire simulation; also a random-tick handler; `FireCell` per burning object |
 | `FireMath` | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireMath.cs` | Pure formulas: size, burn time, spread reach and attempts, heat |
 | `FireView` | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireView.cs` | Fire rendering and lights; settings `FireViewSettings` in `MapGenerator.fireView` |
@@ -18,6 +18,7 @@ Tests: `Assets/Tests/EditMode/FireMathTests.cs`, `Assets/Tests/EditMode/WildWind
 | `WildWindView` | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Wind/WildWindView.cs` | One GPU boid flock per gust near the camera; settings `WildWindViewSettings` in `MapGenerator.wildWindView` |
 | `SeasonClockSource` | `Assets/Scripts/EntitySystem/AI/Colony/SeasonClockSource.cs` | `IMapSeason` over `SeasonClock`, incl. `WinterApproach`; set by `EntityManager` |
 
+`MapGenerator.mapEventRules` is the rules asset; unset gives defaults and a warning.
 ## Data flow
 
 1. `MapGenerator.SetUp` creates `GlobalMapEvents` after `RandomTickService`; it registers `FireEvent` as a tick handler.
@@ -29,8 +30,11 @@ Tests: `Assets/Tests/EditMode/FireMathTests.cs`, `Assets/Tests/EditMode/WildWind
 6. Spread: `SpreadAttempts(size)` random cells within `SpreadReach(size)` cells, chance falls with distance and follows the wind.
 7. A cell of a multi-cell object resolves to its primary cell; the burning key is always the primary cell.
 8. Heat: `HeatDamageAt(p)` is `damagePerSecond` scaled by cover inside `HeatRadius(size)`; `HeatBounds` bounds all heat.
-9. Agents take heat once per fire step (`EntityManager.ApplyFireHeat`, `StepIndex`, `LastStep`); players in `PlayerEntity` metabolism. In the same pass `FindNearestBurning` (`TryFindNearestBurning`) gives an agent within `fireSenseRadius` cells the nearest burning cell, and `EntityModel.ReportHazard` turns it into a threat source before any damage.
-10. `FireEvent` keeps the burning keys in a dense list in step with the hash (`FireCell.Slot`, swap-back); `TryFindNearestBurning` scans it when it holds fewer than (2R+1)² cells, else the square (`FindNearestBurningDense` and `FindNearestBurning` agree, ties included).
+9. Agents take heat once per fire step (`EntityManager.ApplyFireHeat`, `StepIndex`, `LastStep`); players in `PlayerEntity` metabolism.
+   In the same pass `FindNearestBurning` (`TryFindNearestBurning`) gives an agent within `fireSenseRadius` cells the nearest burning cell,
+   and `EntityModel.ReportHazard` turns it into a threat source before any damage.
+10. `FireEvent` keeps the burning keys in a dense list in step with the hash (`FireCell.Slot`, swap-back);
+    `TryFindNearestBurning` scans it when it holds fewer than (2R+1)² cells, else the square (`FindNearestBurningDense` and `FindNearestBurning` agree, ties included).
 11. `FireView` rebuilds one `GraphicsBuffer` when `FireEvent.Version` changes and draws two mesh-less `Graphics.RenderPrimitives` calls.
 
 ## Wild winds

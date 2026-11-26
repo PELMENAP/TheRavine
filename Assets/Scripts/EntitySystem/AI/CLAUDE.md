@@ -5,7 +5,7 @@ Map: `docs/map/ai.md`. Hot methods and tick order: `docs/map/HOT_PATHS.md`. Befo
 - Agents tick only from `EntityManager.Update`. Do not add a second tick path, a coroutine or a UniTask loop for agents.
 - Time is `SimulationClock`. `Time.time`, `Time.deltaTime` and `UniTask.Delay` are forbidden here.
 - Rules are read in the tick through `SimulationRules.Frame` by `ref readonly`. A new constant goes into `SimulationRules`,
-  plus a `RulesFrame` field if the tick reads it.
+  plus `[FrameField]` on the field if the tick reads it, then `python3 tools/rulesframe.py gen`.
 - Per-agent arrays are indexed by `EntityModel.ManagerIndex`. A new per-agent system exposes `RemoveSwapBack(int index, int last)`,
   is called from `ColonyPopulation.RemoveEntitySwapBack`, and is added to `SoaSwapBackTests` and to `docs/OPTIMIZATION.md` section 14.
 - Never cache an index into a per-agent array across a tick window.

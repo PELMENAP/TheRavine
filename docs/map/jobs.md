@@ -14,8 +14,8 @@ Job rules (attributes, allocators, batch sizes, one `Complete` per batch): `docs
 | `MovePlanner` | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | Batches move requests into `PlanJob`; reads colony fields |
 | `BoidsBehaviour` | `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs` | Bird flocks: orchestrator of the bird job chain |
 | `BoidsInfo` | `Assets/Scripts/EntitySystem/Job/BoidsInfo.cs` | Bird settings (ScriptableObject) |
-| `MobController` | `Assets/Scripts/EntitySystem/Entityes/Mob/MobController.cs` | Mob movement through `MoveMobsJob`; obstacles and ground from `MotionSystem.PrepareAtlas` |
-| `MimicLegSystem` | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/MimicLegSystem.cs` | Runs `MimicLegJob` once per frame from `MimicLegDriver` |
+| `MobController` | `Assets/Scripts/EntitySystem/Entities/Mob/MobController.cs` | Mob movement through `MoveMobsJob`; obstacles and ground from `MotionSystem.PrepareAtlas` |
+| `MimicLegSystem` | `Assets/Scripts/EntitySystem/Entities/Mimic/Scripts/MimicLegSystem.cs` | Runs `MimicLegJob` once per frame from `MimicLegDriver` |
 | `BoidsMenuBackground` | `Assets/Scripts/GameSceneManagerSystem/Menu/BoidsMenuBackground.cs` | GPU boids behind the main menu |
 
 The flocking of agents (not birds) is `BoidSystem` in `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs`: `docs/map/ai.md`.

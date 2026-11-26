@@ -35,6 +35,7 @@ public sealed class ColonyPopulation
     private readonly BehaviourDescriptorLog _descriptors;
     private readonly NoveltyProgressSystem  _novelty;
     private readonly HelpLog _helpLog;
+    private readonly BehaviourMotifLog _motifs;
 
     public LifeEventLog LifeLog { get; set; }
 
@@ -67,7 +68,7 @@ public sealed class ColonyPopulation
         List<EntityModel> entities, ColonyRegistry colonies, ColonyState wild, ColonyFood food, EvolutionService evolution,
         EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, SurveySystem survey, UtilityPriorSystem utility,
         CasteThresholdSystem thresholds, SkillGraphStore skills, BoidSystem boids, EnergyLedger ledger, SpeechBus speech, bool spawnNetworkObjects,
-        BehaviourDescriptorLog descriptors = null, NoveltyProgressSystem novelty = null, HelpLog helpLog = null)
+        BehaviourDescriptorLog descriptors = null, NoveltyProgressSystem novelty = null, HelpLog helpLog = null, BehaviourMotifLog motifs = null)
     {
         _spawnNetworkObjects = spawnNetworkObjects;
         _prefab        = prefab;
@@ -94,6 +95,7 @@ public sealed class ColonyPopulation
         _descriptors   = descriptors;
         _novelty       = novelty;
         _helpLog       = helpLog;
+        _motifs        = motifs;
     }
 
     public void StartPredatorClock(double now) => _nextPredatorTime = now;
@@ -196,6 +198,7 @@ public sealed class ColonyPopulation
         model.Speech.SetMuted(muted);
         _speech.Reset(model.ManagerIndex, model.ColonyIndex, model.EntityId, muted, colony.Arm);
         _descriptors?.Reset(model.ManagerIndex);
+        _motifs?.Reset(model.ManagerIndex);
         _novelty?.Reset(model.ManagerIndex);
         _helpLog?.Reset(model.ManagerIndex);
         if (saved.HasValue) model.RestoreHelp(saved.Value);
@@ -301,6 +304,7 @@ public sealed class ColonyPopulation
             model.CaptureFinalFitness();
             var cause = model.Mortality != null ? model.Mortality.Cause : DeathCause.Age;
             model.Colony?.Stats.RecordDeath(model.TimeAlive, cause);
+            if (model.IsGuest) model.Colony?.Stats.RecordGuestDeath(model.TimeAlive);
             HandleLeaderDeath(model);
             BroadcastDeath(model, cause);
             model.DropHeldObject(model.DeathPosition);
@@ -390,6 +394,7 @@ public sealed class ColonyPopulation
         }
 
         model.ClearCount();
+        if (model.IsGuest && model.Colony != null) model.Colony.GuestCount--;
         model.Colony?.RemoveMember(model, _entities);
         model.Motor.BindSlot(-1);
 
@@ -411,6 +416,7 @@ public sealed class ColonyPopulation
         _skills.RemoveSwapBack(idx, last);
         _speech.RemoveSwapBack(idx, last);
         _descriptors?.RemoveSwapBack(idx, last);
+        _motifs?.RemoveSwapBack(idx, last);
         _novelty?.RemoveSwapBack(idx, last);
         _helpLog?.RemoveSwapBack(idx, last);
         _grid.MarkStale();
@@ -470,8 +476,25 @@ public sealed class ColonyPopulation
             }
             if (double.IsNaN(colony.ExtinctSince)) { colony.ExtinctSince = now; continue; }
             if (now - colony.ExtinctSince < r.ColonyRespawnDelay) continue;
-            ReseedColony(colony, PickDonor(_colonies, colony));
+            var parent = r.FissionEnabled ? PickFissionParent(_colonies, colony, r.FissionMembers) : null;
+            ReseedColony(colony, parent ?? PickDonor(_colonies, colony), parent != null);
         }
+    }
+
+    public static ColonyState PickFissionParent(ColonyRegistry colonies, ColonyState exclude, int minAdults)
+    {
+        ColonyState best = null;
+        int bestAdults = minAdults;
+        for (int c = 0; c < colonies.Count; c++)
+        {
+            var colony = colonies[c];
+            if (colony == exclude || colony.IsWild || colony.Arm != exclude.Arm) continue;
+            int adults = colony.AdultCount;
+            if (adults <= bestAdults) continue;
+            bestAdults = adults;
+            best = colony;
+        }
+        return best;
     }
 
     public static ColonyState PickDonor(ColonyRegistry colonies, ColonyState exclude)
@@ -490,22 +513,35 @@ public sealed class ColonyPopulation
         return best;
     }
 
-    private void ReseedColony(ColonyState colony, ColonyState donor)
+    private readonly List<EntityModel> _moveScratch = new();
+
+    private void ReseedColony(ColonyState colony, ColonyState donor, bool fission)
     {
+        var rules = SimulationRules.Active;
+        var mode  = rules.ReseedMode;
         colony.ExtinctSince = double.NaN;
         colony.EmaPrimed    = false;
         colony.Stats.Reseeds++;
 
-        if (donor != null)
+        string origin = (fission ? "fission" : "reseeded") + (mode == ReseedMode.MutatedClone ? "_mutated" : mode == ReseedMode.Fresh ? "_fresh" : "");
+        if (mode == ReseedMode.Fresh)
+        {
+            var old = colony.Brain;
+            colony.ResetGenome();
+            ReplaceColonyBrain(colony, new SharedHierarchicalBrain(old.InputSize, old.LstmHidden, old.WideSocialExecutor), origin, 0);
+        }
+        else if (donor != null)
         {
             colony.InheritGenome(donor.Genome);
-            var old = colony.Brain;
-            colony.ReplaceBrain(new SharedHierarchicalBrain(donor.Brain));
-            old?.Dispose();
+            var brain = new SharedHierarchicalBrain(donor.Brain);
+            if (mode == ReseedMode.MutatedClone) brain.AddWeightNoise(rules.ReseedWeightSigma);
+            ReplaceColonyBrain(colony, brain, origin, donor.ColonyId);
         }
 
-        int count = SimulationRules.Active.ColonyRespawnCount;
-        var donorMembers = donor != null ? donor.Members : default;
+        if (fission && donor != null && MoveFissionShare(donor, colony, rules.FissionShare) > 0) return;
+
+        int count = rules.ColonyRespawnCount;
+        var donorMembers = donor != null && mode != ReseedMode.Fresh ? donor.Members : default;
         for (int i = 0; i < count && HasFreeSlot(colony); i++)
         {
             GeneticParameters genes = donorMembers.Length > 0
@@ -514,6 +550,132 @@ public sealed class ColonyPopulation
             SpawnEntity(RandomPosition(colony), colony, colony.Brain.CreateContext(genes));
             if (donor != null) donorMembers = donor.Members;
         }
+    }
+
+    private void ReplaceColonyBrain(ColonyState colony, SharedHierarchicalBrain brain, string origin, int donorColonyId)
+    {
+        var old = colony.Brain;
+        colony.ReplaceBrain(brain, origin, donorColonyId);
+        if (old == null) return;
+
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            var e = _entities[i];
+            if (e.Brain != null && e.Brain.Uses(old)) e.Brain.ReplaceBrain(brain);
+        }
+        old.Dispose();
+    }
+
+    private int MoveFissionShare(ColonyState parent, ColonyState child, float share)
+    {
+        _moveScratch.Clear();
+        var members = parent.Members;
+        for (int i = 0; i < members.Length; i++)
+        {
+            var e = _entities[members[i]];
+            if (!e.IsDisposed && !e.IsDeathPending) _moveScratch.Add(e);
+        }
+
+        int total = _moveScratch.Count;
+        int want = math.clamp((int)math.round(total * share), 0, total - 1);
+        int moved = 0;
+        for (int k = 0; k < want; k++)
+        {
+            int pick = RavineRandom.RangeInt(k, total);
+            (_moveScratch[k], _moveScratch[pick]) = (_moveScratch[pick], _moveScratch[k]);
+            if (MoveMember(_moveScratch[k], child, true)) moved++;
+        }
+        _moveScratch.Clear();
+        return moved;
+    }
+
+    private bool[] _transplantDone = Array.Empty<bool>();
+
+    public void TickTransplants()
+    {
+        var schedule = SimulationRules.Active.TransplantSchedule;
+        if (schedule.Length == 0) return;
+        if (_transplantDone.Length != schedule.Length) _transplantDone = new bool[schedule.Length];
+
+        double now = SimulationClock.TimeD;
+        for (int i = 0; i < schedule.Length; i++)
+        {
+            if (_transplantDone[i] || now < schedule[i].time) continue;
+            _transplantDone[i] = true;
+            Transplant(schedule[i]);
+        }
+    }
+
+    private int Transplant(in TransplantEntry entry)
+    {
+        if (!_colonies.TryGetById(entry.fromColonyId, out var origin) || !_colonies.TryGetById(entry.toColonyId, out var to)
+            || ReferenceEquals(origin, to) || origin.IsWild || to.IsWild) return 0;
+
+        _moveScratch.Clear();
+        var members = origin.Members;
+        for (int i = 0; i < members.Length; i++)
+        {
+            var e = _entities[members[i]];
+            if (!e.IsDisposed && !e.IsDeathPending && e.CasteFixed && !e.IsJuvenile && !e.IsGuest) _moveScratch.Add(e);
+        }
+
+        int total = _moveScratch.Count;
+        int want = math.min(entry.count, total);
+        int moved = 0;
+        for (int k = 0; k < want; k++)
+        {
+            int pick = RavineRandom.RangeInt(k, total);
+            (_moveScratch[k], _moveScratch[pick]) = (_moveScratch[pick], _moveScratch[k]);
+            if (MoveMember(_moveScratch[k], to, false)) moved++;
+        }
+        _moveScratch.Clear();
+        return moved;
+    }
+
+    public bool MoveMember(EntityModel model, ColonyState to, bool bindToTargetBrain)
+    {
+        var origin = model != null ? model.Colony : null;
+        if (origin == null || to == null || ReferenceEquals(origin, to) || origin.IsWild || to.IsWild) return false;
+        if (model.IsDisposed || model.IsDeathPending) return false;
+
+        int idx = model.ManagerIndex;
+        if ((uint)idx >= (uint)_entities.Count || !ReferenceEquals(_entities[idx], model)) return false;
+
+        if (ReferenceEquals(origin.Leader, model))
+        {
+            origin.SetLeader(null);
+            origin.NextElection = 0d;
+        }
+
+        model.ClearCount();
+        origin.RemoveMember(model, _entities);
+        if (model.IsGuest)
+        {
+            origin.GuestCount--;
+            model.SetGuestOf(0);
+        }
+        model.Rebind(to);
+        to.AddMember(model);
+        model.SyncCount();
+
+        var ctx = model.Brain.Context;
+        ctx.TrainOff = false;
+        if (!bindToTargetBrain)
+        {
+            model.SetGuestOf(origin.ColonyId);
+            to.GuestCount++;
+            ctx.TrainOff = !SimulationRules.Active.TransplantTrainGuests;
+        }
+
+        _speech.SetColony(idx, to.Index);
+        _skills.Reset(idx, in model.Brain.Context.CoordMLP.Params, to.SkillTopology, SkillAtlas.Active);
+        _skills.SetColony(idx, to.Index);
+        _skills.MarkDirty(idx);
+        if (bindToTargetBrain) model.Brain.ReplaceBrain(to.Brain);
+
+        _motion.SetPosition(idx, RandomPosition(to));
+        _grid.MarkStale();
+        return true;
     }
 
     public void TickPredators()

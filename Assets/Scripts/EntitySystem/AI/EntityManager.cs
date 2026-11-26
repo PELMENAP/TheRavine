@@ -135,10 +135,14 @@ public partial class EntityManager : MonoBehaviour
     private int _skillSweepCursor;
     private SpeechBus            _speech;
     private BehaviourDescriptorLog _descriptors;
+    private BehaviourMotifLog _motifs;
+    private ColonyCanvas _canvas;
+    public ColonyCanvas Canvas => _canvas;
     private NoveltyProgressSystem _noveltyProgress;
     private LifeEventLog _lifeLog;
     public SpeechBus Speech => _speech;
     private ColonyState _wild;
+    private int _firstExtraColony = int.MaxValue;
     private float  _lastColonyTime;
     public InstinctSystem Instincts => _instincts;
 
@@ -239,7 +243,7 @@ public partial class EntityManager : MonoBehaviour
             if (SimulationRules.Active.SimulationLogEnabled && now >= _nextSimulationLogTime)
             {
                 _simulationLog ??= new SimulationLog(scenario != null ? scenario.name : null, SimulationRules.Active.SystemFlagsLabel(), scenario, _anomalies);
-                _simulationLog.Sample(now, _colonies, _entities.Count, _ledger, _evolution, _speech, _descriptors, _entities, maxPopulation);
+                _simulationLog.Sample(now, _colonies, _entities.Count, _ledger, _evolution, _speech, _descriptors, _entities, maxPopulation, _motifs, _canvas);
                 _nextSimulationLogTime = now + SimulationRules.Active.SimulationLogIntervalSeconds;
             }
             if (now >= _tickStartTime)
@@ -426,6 +430,12 @@ public partial class EntityManager : MonoBehaviour
             _descriptors = new BehaviourDescriptorLog(_capacity);
             ServiceLocator.Register(_descriptors);
         }
+        if (SimulationRules.Active.SimulationLogEnabled) _canvas = new ColonyCanvas();
+        if (SimulationRules.Active.SimulationLogEnabled && SimulationRules.Active.MotifTopK > 0)
+        {
+            _motifs = new BehaviourMotifLog(_capacity, SimulationRules.Active.MotifTopK);
+            ServiceLocator.Register(_motifs);
+        }
         if (SimulationRules.Active.HelpLogEnabled)
         {
             _helpLog = new HelpLog(_capacity, SimulationRules.Active.HelpLogSize);
@@ -468,7 +478,7 @@ public partial class EntityManager : MonoBehaviour
     {
         _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue), _skills);
         _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, _capacity, spawnRadius,
-            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _survey, _utility, _thresholds, _skills, _boids, _ledger, _speech, !snapshotStream, _descriptors, _noveltyProgress, _helpLog);
+            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _survey, _utility, _thresholds, _skills, _boids, _ledger, _speech, !snapshotStream, _descriptors, _noveltyProgress, _helpLog, _motifs);
         _population.Spawned += RaiseSpawned;
         if (SimulationRules.Active.LifeLogEnabled)
         {
@@ -518,7 +528,7 @@ public partial class EntityManager : MonoBehaviour
         _codex.Step(dt);
     }
 
-    private void CreateColonies()
+    private void CreateColonies(ChunkFoodIndex foodIndex)
     {
         if (scenario != null && scenario.ColonyCount > 0)
         {
@@ -527,16 +537,55 @@ public partial class EntityManager : MonoBehaviour
                 var nest = scenario.NestPosition(i, transform.position);
                 AddColony(new Vector3(nest.x, transform.position.y, nest.y));
             }
-            if (SimulationRules.Active.PredatorCount > 0) _wild = AddColony(transform.position, true);
-            return;
+        }
+        else
+        {
+            int n = colonyOrigins != null ? colonyOrigins.Length : 0;
+            for (int i = 0; i < n; i++)
+                if (colonyOrigins[i] != null) AddColony(colonyOrigins[i].position);
+
+            if (_colonies.Count == 0) AddColony(transform.position);
         }
 
-        int n = colonyOrigins != null ? colonyOrigins.Length : 0;
-        for (int i = 0; i < n; i++)
-            if (colonyOrigins[i] != null) AddColony(colonyOrigins[i].position);
-
-        if (_colonies.Count == 0) AddColony(transform.position);
+        _firstExtraColony = _colonies.Count;
+        AddExtraColonies(foodIndex);
         if (SimulationRules.Active.PredatorCount > 0) _wild = AddColony(transform.position, true);
+    }
+
+    private void AddExtraColonies(ChunkFoodIndex foodIndex)
+    {
+        var rules = SimulationRules.Active;
+        int count = Math.Min(rules.ExtraCivilColonies, ColonyRegistry.MaxColonies - 1 - _colonies.Count);
+        if (count <= 0) return;
+
+        int existing = _colonies.Count;
+        var sites = new Unity.Mathematics.float2[existing + count];
+        for (int i = 0; i < existing; i++) sites[i] = _colonies[i].Nest.Position;
+
+        var sensor = _map != null ? new TerrainSensor(_map) : null;
+        var centre = new Unity.Mathematics.float2(transform.position.x, transform.position.z);
+        float Score(Unity.Mathematics.float2 p) => ScoreColonySite(sensor, foodIndex, p);
+
+        int placed = ColonySites.Choose(sites, existing, count, centre, rules.ExtraColonyRadius, rules.MinColonySpacing, rules.ExtraColonyCandidates, Score);
+        for (int i = 0; i < placed; i++)
+        {
+            var site = sites[existing + i];
+            AddColony(new Vector3(site.x, transform.position.y, site.y));
+        }
+        if (placed < count)
+            RavineLog.Warning($"[EntityManager] Extra colonies: placed {placed} of {count} (spacing {rules.MinColonySpacing}, radius {rules.ExtraColonyRadius})");
+    }
+
+    private float ScoreColonySite(TerrainSensor sensor, ChunkFoodIndex foodIndex, Unity.Mathematics.float2 p)
+    {
+        if (sensor == null || !sensor.TrySample(p.x, p.y, out TerrainSample terrain)) return 0f;
+        if (!_map.TrySampleHeightBilinear(p.x, p.y, out float height) || MapGenerator.AboveWater(_map.Ravine, height, p.y, _map.WaterLevel) <= 0f)
+            return ColonySites.Unsuitable;
+
+        ref readonly var r = ref SimulationRules.Frame;
+        float food = foodIndex != null ? (1f - foodIndex.NestScarcity(p, r.ScarcityChunkRadius)) * r.QuorumFoodNorm : 0f;
+        float score = ColonyState.TerrainSiteScore(in r, in terrain, food);
+        return score > 0f ? score : ColonySites.Unsuitable;
     }
 
     private void ApplyScenarioFood(ChunkFoodIndex foodIndex)
@@ -593,6 +642,7 @@ public partial class EntityManager : MonoBehaviour
 
             if (brain == null)
             {
+                if (!colony.IsWild && colony.Index >= _firstExtraColony) continue;
                 if (fallback == null)
                 {
                     var shared = await NeuralModelStorage.LoadAsync<SharedBrainSnapshot>(BrainModelName(wideSocial), destroyCancellationToken);
@@ -657,7 +707,7 @@ public partial class EntityManager : MonoBehaviour
         var saved = registry?.LoadedPopulation;
         try
         {
-            if (saved == null) CreateColonies();
+            if (saved == null) CreateColonies(foodIndex);
             else RestoreColonies(saved);
             ApplyScenarioFood(foodIndex);
             InitializePopulation();
@@ -832,6 +882,7 @@ public partial class EntityManager : MonoBehaviour
         _speech.Flush(_grid, SimulationClock.TimeD);
         _population.ProcessPendingDeaths();
         _population.CheckExtinctions();
+        _population.TickTransplants();
         _population.TickPredators();
         for (int c = 0; c < _colonies.Count; c++) _colonies[c].Brain.ApplyPendingGradients();
         _food.PruneUnloaded();
@@ -1283,6 +1334,7 @@ public partial class EntityManager : MonoBehaviour
         services.Unregister(_speech);
         services.Unregister(_noveltyProgress);
         if (_descriptors != null) services.Unregister(_descriptors);
+        if (_motifs != null) services.Unregister(_motifs);
         if (_helpLog != null) services.Unregister(_helpLog);
         services.Unregister(_players);
         services.Unregister(_ledger);
@@ -1349,6 +1401,7 @@ public partial class EntityManager : MonoBehaviour
         _noveltyProgress?.Dispose();
         _lifeLog?.Dispose();
         _descriptors?.Dispose();
+        _motifs?.Dispose();
         _helpLog?.Dispose();
         _grid.Dispose();
         _colonies?.Dispose();

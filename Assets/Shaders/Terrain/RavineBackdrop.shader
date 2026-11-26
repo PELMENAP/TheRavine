@@ -27,7 +27,7 @@ Shader "The Ravine/Terrain/RavineBackdrop"
     {
         Tags
         {
-            "RenderType" = "Opaque"
+            "RenderType" = "Transparent-1"
             "Queue" = "Geometry+50"
             "RenderPipeline" = "UniversalPipeline"
         }

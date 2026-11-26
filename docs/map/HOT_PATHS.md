@@ -21,7 +21,8 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 9. Fourth loop: `EntityModel.EndCycle` (the view is notified only while the agent is visible).
 10. `MovePlanner.Flush`, then `InfectionCoordinator.Spread` on the batch.
 11. At the end of a window, `CloseTickWindow`: deaths, extinctions, predators, `ApplyPendingGradients`, nests, castes, `SweepSkills`, `SolveSkills`, visibility.
-12. Every frame after the tick: `EntityManager.ApplyFireHeat` (once per fire step), `EntityManager.ApplyWildWind` (once per wind step while active), `SpeechBus.Flush`, `MovePlanner.Flush`, `MotionSystem.Step`, `StampAgents`, `AgentSnapshotStream.Tick`.
+12. Every frame after the tick: `EntityManager.ApplyFireHeat` (once per fire step), `EntityManager.ApplyWildWind` (once per wind step while active), `SpeechBus.Flush`, `MovePlanner.Flush`,
+    `MotionSystem.Step`, `StampAgents`, `AgentSnapshotStream.Tick`.
 
 | Area | File | Hot methods |
 |---|---|---|
@@ -33,17 +34,18 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 | Vectorisation | `Assets/Scripts/EntitySystem/AI/InputVectorizer.cs` | whole file |
 | Metabolism | `Assets/Scripts/EntitySystem/AI/Entity/CreatureCore.cs` | `Metabolize`, `StepVirology`, `ReadVitals` |
 | Virology | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs`, `Assets/Scripts/EntitySystem/Virology/Ribosome.cs` | `VirologyComponent.Step`, `Ribosome.Step`, `Relax` |
-| Infection | `Assets/Scripts/EntitySystem/Virology/InfectionService.cs`, `Assets/Scripts/EntitySystem/Virology/VirologyEvents.cs` | `ProcessSpread` and the `TryTransmit` family; `VirologyEvents.Note*` (integer increments) |
+| Infection | `Assets/Scripts/EntitySystem/Virology/InfectionService.cs`, `VirologyEvents.cs` | `ProcessSpread` and the `TryTransmit` family; `VirologyEvents.Note*` (integer increments) |
 
 ## Decide, forward pass, train
 
 | Area | File | Hot methods |
 |---|---|---|
-| Brain | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | `EnqueueDecision`, `RunDecisions`, `GiveReward`, `CompleteDecision`, `ScheduleTraining`, `ApplyPendingGradients` |
-| Kernels and jobs | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralKernels.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/LtcNeuron.cs` | whole files |
+| Brain decisions | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.Decide.cs` | `EnqueueDecision`, `RunDecisions`, `ScheduleTraining` |
+| Brain learning | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.Learning.cs` | `GiveReward`, `CompleteDecision`, `ApplyPendingGradients` |
+| Kernels and jobs | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralKernels.cs`, `NeuralJobs.cs`, `LtcNeuron.cs` | whole files |
 | Batch and contexts | `Assets/Scripts/EntitySystem/AI/SharedAI/` | `PerceptronBatch`, `EntityBrainContext`, `LSTMContext`, `PerceptronContext`, `DecisionRing`, `ContextSlabs`, `FloatSlabPool` |
 | Networks | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs`, `Assets/Scripts/EntitySystem/AI/LSTM/` | forward and backward passes |
-| Critic and novelty | `Assets/Scripts/EntitySystem/AI/SharedAI/ValueCritic.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/RandomNetworkDistillation.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/NoveltyProgressSystem.cs` | whole files; `SharedHierarchicalBrain.ApplyProgress` |
+| Critic and novelty | `Assets/Scripts/EntitySystem/AI/SharedAI/ValueCritic.cs`, `RandomNetworkDistillation.cs`, `NoveltyProgressSystem.cs` | whole files; `SharedHierarchicalBrain.ApplyProgress` |
 
 ## Perception, instincts, colony blackboard
 
@@ -59,13 +61,18 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 | Utility | `Assets/Scripts/EntitySystem/AI/Utility/UtilityPriorSystem.cs` | `Write`, `Schedule`, `Output`, `UtilityPriorJob` |
 | Flocking | `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs` | `Write`, `Run`, `Output`, `BoidJob` |
 | Castes | `Assets/Scripts/EntitySystem/AI/Caste/CasteThresholdSystem.cs` | `Get`, `Reinforce` |
-| Skills | `Assets/Scripts/EntitySystem/AI/Skills/SkillGraphStore.cs`, `SkillGraphMath.cs`, `SkillGraphXp.cs` | `AddXp`, `Award`, `Materialize`, math functions; `EntityModel.AwardSkillXp`, `RefreshSkillTuning` |
+| Skills store | `Assets/Scripts/EntitySystem/AI/Skills/SkillGraphStore.cs`, `SkillGraphXp.cs` | `AddXp`, `Award`, `Materialize`; `EntityModel.AwardSkillXp` |
+| Skills math | `Assets/Scripts/EntitySystem/AI/Skills/SkillGraphMath.cs` | math functions; `EntityModel.RefreshSkillTuning` |
 | Skill sweep | `Assets/Scripts/EntitySystem/AI/Skills/SkillDecayJob.cs` | `SkillDecayJob`, `SkillGraphStore.ScheduleDecay`; marker `EntityManager.SkillDecaySweep` |
 | Skill solver | `Assets/Scripts/EntitySystem/AI/Skills/SkillGraphSolver.cs` | `Step`, once per `SkillSolverInterval` per colony, scratch buffers only; marker `SkillGraphSolver.Step` |
 | Colony fields | `Assets/Scripts/EntitySystem/AI/Nest/NestState.cs` | `Mark`, `MarkPair`, `FieldAt`, `SampleDirection`, decay and shift jobs |
 | Points of interest | `Assets/Scripts/EntitySystem/AI/Colony/ColonyPoiBoard.cs` | `Offer`, `TryPickBest` |
-| Speech | `Assets/Scripts/EntitySystem/AI/Speech/SpeechBus.cs`, `Assets/Scripts/EntitySystem/AI/Speech/ColonySpeechTables.cs` | `Emit`, `TryStartCooldown`, `InboxAt`, `Flush`, `ApplyArm`, `RecordListen`, `SpeechDeliverJob`; `ColonySpeechTables.RecordEmission`, `RecordListen` |
-| Experiment diagnostics | `Assets/Scripts/EntitySystem/AI/Debug/BehaviourDescriptorLog.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/GradientConflict.cs` | `BehaviourDescriptorLog.Note*` (null-checked, off by default); `DelayedPerceptron.AccumulateGroupConflict` only in a conflict cycle |
+| Speech | `Assets/Scripts/EntitySystem/AI/Speech/SpeechBus.cs` | `Emit`, `TryStartCooldown`, `InboxAt`, `Flush`, `ApplyArm`, `RecordListen`, `SpeechDeliverJob` |
+| Speech tables | `Assets/Scripts/EntitySystem/AI/Speech/ColonySpeechTables.cs` | `RecordEmission`, `RecordListen` |
+| Behaviour descriptor log | `Assets/Scripts/EntitySystem/AI/Debug/BehaviourDescriptorLog.cs` | `Note*` (null-checked, off by default) |
+| Behaviour motif log | `Assets/Scripts/EntitySystem/AI/Debug/BehaviourMotifLog.cs` | `NoteAction` (null-checked, off by default) |
+| Colony stats | `Assets/Scripts/EntitySystem/AI/Colony/ColonyStats.cs` | `RecordHabit` |
+| Gradient conflict | `Assets/Scripts/EntitySystem/AI/SharedAI/GradientConflict.cs` | `DelayedPerceptron.AccumulateGroupConflict` only in a conflict cycle |
 
 ## Motion
 
@@ -73,10 +80,11 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 |---|---|---|
 | Agent motion | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | `Step`, `MotionJob`, `MotionApplyJob`, `PositionOf`, `SetPosition`, `VelocityBySlot`, `SyncAtlas` |
 | Move planning | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | `Enqueue`, `Flush`, `PlanJob` |
-| Obstacles | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision/ObstacleQuery.cs` | whole file (`Resolve`, `ResolveSwept`, `Support`, `Walk`); per agent and per mob per frame, per player per physics step |
-| Player ground | `Assets/Scripts/EntitySystem/Entityes/Player/Components/TerrainPhysicsResolver.cs` | `Resolve`, `ResolveObstacles`, `ResolveGround`; `MapGenerator.ResolveObstacles`, `MapGenerator.SupportObstacles` |
-| Mobs | `Assets/Scripts/EntitySystem/Entityes/Mob/MobController.cs` | `Update`, `LateUpdate`, `MoveMobsJob`; `HeightAtlas.Covers`, `MotionSystem.PrepareAtlas` |
-| Mimic legs | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/MimicLegJob.cs` | whole file |
+| Obstacles | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision/ObstacleQuery.cs` | whole file (`Resolve`, `ResolveSwept`, `Support`, `Walk`); agents, mobs: frame; player: physics step |
+| Player ground | `Assets/Scripts/EntitySystem/Entities/Player/Components/TerrainPhysicsResolver.cs` | `Resolve`, `ResolveObstacles`, `ResolveGround` |
+| Map obstacle queries | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.Terrain.cs` | `MapGenerator.ResolveObstacles`, `MapGenerator.SupportObstacles` |
+| Mobs | `Assets/Scripts/EntitySystem/Entities/Mob/MobController.cs` | `Update`, `LateUpdate`, `MoveMobsJob`; `HeightAtlas.Covers`, `MotionSystem.PrepareAtlas` |
+| Mimic legs | `Assets/Scripts/EntitySystem/Entities/Mimic/Scripts/MimicLegJob.cs` | whole file |
 
 ## Birds
 
@@ -87,7 +95,9 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 
 | Area | File | Hot methods |
 |---|---|---|
-| Frame | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | `Update`, `ApplyWorldCommands`, `FlushDirty`, `SupplySimSquare`, height and occupancy queries |
+| Frame | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | `Update`, `ApplyWorldCommands` |
+| Chunk supply | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.Window.cs`, `MapGenerator.Persistence.cs` | `SupplySimSquare`, `FlushDirty` |
+| Height and occupancy queries | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.Terrain.cs`, `MapGenerator.Objects.cs` | height sampling, `IsOccupiedAt`, `TryGetObject` |
 | Random ticks | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Ticks/RandomTickService.cs` | `Update`, `Tick`, `Dispatch`; `RandomTickJob` |
 | Tick handlers | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/NAL_PC.cs`, `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireEvent.cs` | `OnRandomTick`, `Step`, `Spread`, `HeatDamageAt` |
 | Map events | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/GlobalMapEvents.cs` | `Tick` |
@@ -97,7 +107,8 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 ## Rendering
 
 `FarObjectRenderer`, `GrassSystem`, `EndlessTerrain`, `EndlessLiquids`, `RavineBackdrop`: per-frame `Tick` and `Render`. Shader properties by cached id only.
-`GrassSystem.Update` also runs `ApplySector` and `BuildFar` (at most `lodBlocksPerFrame` far blocks per frame) and `DispatchNear` when the camera moved: cached ids, no allocation, one draw per built block.
+`GrassSystem.Update` also runs `ApplySector` and `BuildFar` (at most `lodBlocksPerFrame` far blocks per frame) and `DispatchNear` when the camera moved:
+cached ids, no allocation, one draw per built block.
 `GrassTrampleField.Stamp` and `StampCreature`, `EntityManager.StampAgents`, `SoilShaderFeed.Publish`: no allocation; tests `GrassTrampleFieldTests`, `SoilShaderFeedTests`.
 
 ## Replication
@@ -107,7 +118,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 
 ## Server request path
 
-RPC handlers in `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs`: no allocation and no formatting on the success path.
+RPC handlers in `Assets/Scripts/EntitySystem/Entities/Player/PlayerController.cs`: no allocation and no formatting on the success path.
 `PlayerSkillGraph.Award` (called from the place, pick-up and speak handlers and from `StepServerMovement`) and `PlayerSkillGraph.TryExecute` (`SkillGraphCommandServerRpc`) are on that path.
 
 ## Guards

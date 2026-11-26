@@ -16,7 +16,6 @@
   <Project Path="UIInventory.csproj" />
   <Project Path="Audio.csproj" />
   <Project Path="undream.llmunity.Runtime.csproj" />
-  <Project Path="View.csproj" />
   <Project Path="Tayx.Graphy.csproj" />
   <Project Path="UniTask.TextMeshPro.csproj" />
   <Project Path="Rive.csproj" />

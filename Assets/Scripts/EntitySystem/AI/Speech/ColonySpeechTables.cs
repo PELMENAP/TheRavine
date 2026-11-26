@@ -21,6 +21,26 @@ public sealed class ColonySpeechTables
         for (int i = 0; i < _listen.Length; i++) _listen[i] += other._listen[i];
     }
 
+    public void AddEmissionsTo(float[] dst)
+    {
+        int n = System.Math.Min(dst.Length, _emit.Length);
+        for (int i = 0; i < n; i++) dst[i] += _emit[i];
+    }
+
+    public long AppendSparse(System.Text.StringBuilder sb)
+    {
+        long total = 0;
+        for (int i = 0; i < _emit.Length; i++)
+        {
+            int n = _emit[i];
+            if (n == 0) continue;
+            if (total > 0) sb.Append(';');
+            sb.Append(i / Vocab).Append(':').Append(i % Vocab).Append(':').Append(n);
+            total += n;
+        }
+        return total;
+    }
+
     public void RecordEmission(in Utterance u)
     {
         int row = (u.Context & (Contexts - 1)) * Vocab;

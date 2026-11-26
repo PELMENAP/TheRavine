@@ -12,8 +12,11 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _ADDITIONAL_LIGHTS
+  - _FOG_ADDITIONAL_LIGHTS
+  - _WATER_CLIP
   m_InvalidKeywords:
+  - _ADDITIONALLIGHTSCATTER_ON
+  - _ADDITIONAL_LIGHTS
   - _AMBIENT_LIGHT
   - _ENABLE_AMBIENT_LIGHT
   - _INTERNAL_ADDITIONAL_LIGHT_SHADOWS
@@ -40,23 +43,31 @@ Material:
     - _MainLightSelfShadowSteps: 1
     - _Steps: 10
     m_Floats:
+    - _AdditionalLightMaxDistance: 50
+    - _AdditionalLightScatter: 1
     - _AdditionalLightSelfShadowDistance: 3
+    - _Anisotropy: 0.45
+    - _BilateralDepthSensitivity: 40
+    - _ClipBelowWater: 1
     - _Density: 0
     - _HeightMaskBlend: 0.99
     - _HeightMaskFalloff: 9.5
-    - _HeightMaskLength: 0.0053433278
+    - _HeightMaskLength: 1.4939306
     - _HeightMaskOffset: 0
     - _HeightMaskRemapMax: 0.8
     - _HeightMaskRemapMin: 0.2
     - _HeightMaskTextureAmplitude: 2
     - _HeightMaskTexturePower: 1
     - _HeightMaskTextureScale: 0.01
+    - _LightMinContribution: 0
     - _MainLightSelfShadowDistance: 8
     - _MaxDistance: 1000
     - _PhaseG: 0.103
+    - _RayStepCount: 16
     - _SelfShadowPower: 1
     - _SelfShadowRemapMax: 0.8
     - _SelfShadowRemapMin: 0.2
+    - _TransmittanceCutoff: 0.001
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _HeightMaskTextureAnimation: {r: 0.01, g: 0.02, b: 0, a: 0}

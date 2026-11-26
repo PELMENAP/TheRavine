@@ -260,10 +260,6 @@ namespace TheRavine.Generator
                 hasCenter = true;
 
                 ApplySector();
-
-                float waterXPosition = (Position2Int.GetX(center) + 0.5f) * MapGenerator.chunkSize;
-                float waterZPosition = (Position2Int.GetY(center) + 0.5f) * MapGenerator.chunkSize;
-                RippleStampSystem.Instance.SetWaterPosition(waterXPosition, waterZPosition);
             }
 
             public void SetSector(ViewSector newSector)
