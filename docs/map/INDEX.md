@@ -22,23 +22,23 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 19 | 2317 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
-| `Assets/Scripts/EntitySystem/AI` | 12 | 2541 |
+| `Assets/Scripts/EntitySystem/AI` | 12 | 2585 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
-| `Assets/Scripts/EntitySystem/AI/Codex` | 10 | 936 |
+| `Assets/Scripts/EntitySystem/AI/Codex` | 10 | 939 |
 | `Assets/Scripts/EntitySystem/AI/Colony` | 9 | 944 |
-| `Assets/Scripts/EntitySystem/AI/Debug` | 6 | 2411 |
+| `Assets/Scripts/EntitySystem/AI/Debug` | 7 | 2891 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 906 |
-| `Assets/Scripts/EntitySystem/AI/Entity` | 18 | 2956 |
-| `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1519 |
+| `Assets/Scripts/EntitySystem/AI/Entity` | 18 | 2957 |
+| `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1520 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 695 |
 | `Assets/Scripts/EntitySystem/AI/Flock` | 1 | 230 |
 | `Assets/Scripts/EntitySystem/AI/Instinct` | 1 | 441 |
 | `Assets/Scripts/EntitySystem/AI/LSTM` | 2 | 257 |
 | `Assets/Scripts/EntitySystem/AI/Nest` | 1 | 394 |
-| `Assets/Scripts/EntitySystem/AI/Perception` | 10 | 2360 |
+| `Assets/Scripts/EntitySystem/AI/Perception` | 10 | 2371 |
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 579 |
-| `Assets/Scripts/EntitySystem/AI/Population` | 7 | 1408 |
-| `Assets/Scripts/EntitySystem/AI/Rules` | 11 | 3353 |
+| `Assets/Scripts/EntitySystem/AI/Population` | 8 | 1500 |
+| `Assets/Scripts/EntitySystem/AI/Rules` | 12 | 3427 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI` | 24 | 3854 |
 | `Assets/Scripts/EntitySystem/AI/Skills` | 19 | 2174 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 8 | 1273 |
@@ -115,7 +115,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 945 |
-| `Assets/Tests/EditMode` | 77 | 12691 |
+| `Assets/Tests/EditMode` | 80 | 13034 |
 
 ## Assemblies
 
@@ -247,6 +247,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | FoodClaim | struct | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 29 |
 | FoodKind | enum | `Assets/Scripts/ObjectSystem/ObjectInfo/ObjectInfo.cs` | 146 |
 | FoodTraits | struct | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 22 |
+| FoodZone | struct | `Assets/Scripts/EntitySystem/AI/Population/ExperimentScenario.cs` | 16 |
 | ForLoopNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 81 |
 | ForwardItem | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 8 |
 | FunctionCallNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 41 |
@@ -403,6 +404,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | RndTrainJob | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/RandomNetworkDistillation.cs` | 170 |
 | RotateCommand | class | `Assets/Scripts/Terminal/GeneratorCommands.cs` | 12 |
 | SaveScriptCommand | class | `Assets/Scripts/Terminal/Rive/RiveRedactorCommands.cs` | 286 |
+| ScenarioColony | class | `Assets/Scripts/EntitySystem/AI/Population/ExperimentScenario.cs` | 5 |
 | SceneLoader | class | `Assets/Scripts/Core/SceneTransition.cs` | 6 |
 | ScriptInfoCommand | class | `Assets/Scripts/Terminal/Rive/RiveRedactorCommands.cs` | 146 |
 | SendToInteractorNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 49 |

@@ -229,6 +229,7 @@ public partial class EntityModel
         _nestFood = ComputeNestFood(nest, in rules);
         UpdateTerritory(nest, in self, dt, in rules);
         ComputeDirections(nest, in self, in foodPos, in rules);
+        if (rules.MaskTaskSignal) _dirMask &= unchecked((ushort)~(1 << (int)DirectionKind.Task));
 
         if (!_terrain.TrySample(pos.x, pos.z, out _lastTerrain))
             _lastTerrain = TerrainSample.Invalid;

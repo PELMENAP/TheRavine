@@ -27,6 +27,8 @@ public partial class EntityManager : MonoBehaviour
 
     [Header("Colonies")]
     [SerializeField] private Transform[] colonyOrigins;
+    [SerializeField] private ExperimentScenario scenario;
+    private readonly FoodZone[] _foodZones = new FoodZone[ExperimentScenario.MaxColonies];
 
     [Header("Food")]
     [SerializeField] private int maxFood = 100;
@@ -80,6 +82,7 @@ public partial class EntityManager : MonoBehaviour
     private readonly EnergyLedger _ledger = new();
     private WarmthField _warmth;
     private SimulationLog _simulationLog;
+    private AnomalyDetector _anomalies;
     private double _nextSimulationLogTime;
     private double _lastWarmthDecayTime;
     private int _energyConsumers;
@@ -234,11 +237,16 @@ public partial class EntityManager : MonoBehaviour
             }
             if (SimulationRules.Active.SimulationLogEnabled && now >= _nextSimulationLogTime)
             {
-                _simulationLog ??= new SimulationLog();
+                _simulationLog ??= new SimulationLog(scenario != null ? scenario.name : null, SimulationRules.Active.SystemFlagsLabel(), scenario, _anomalies);
                 _simulationLog.Sample(now, _colonies, _entities.Count, _ledger, _evolution, _speech, _descriptors, _entities, maxPopulation);
                 _nextSimulationLogTime = now + SimulationRules.Active.SimulationLogIntervalSeconds;
             }
-            if (now >= _tickStartTime) TickAgents(SimulationClock.DeltaTime);
+            if (now >= _tickStartTime)
+            {
+                long tickStart = _simulationLog != null ? System.Diagnostics.Stopwatch.GetTimestamp() : 0L;
+                TickAgents(SimulationClock.DeltaTime);
+                _simulationLog?.NoteTick(System.Diagnostics.Stopwatch.GetTimestamp() - tickStart);
+            }
             ApplyFireHeat();
             ApplyWildWind();
         }
@@ -428,6 +436,12 @@ public partial class EntityManager : MonoBehaviour
         ServiceLocator.Register(_warmth);
         _colonies = new ColonyRegistry();
         ServiceLocator.Register(_colonies);
+        if (SimulationRules.Active.SimulationLogEnabled)
+        {
+            var sim = SimulationRules.Active;
+            _anomalies = new AnomalyDetector(sim.AnomalyPairCapacity, sim.AnomalyLoopWindow, sim.AnomalyReliefPairThreshold, sim.AnomalyMinInvestment);
+            _anomalies.Bind();
+        }
         CreateCodex();
         if (TheRavine.Base.WorldAuthority.IsAuthority && ServiceLocator.Services.TryGet(out TheRavine.Base.WorldRegistry registry) && registry.HasLoadedWorld)
         {
@@ -463,6 +477,7 @@ public partial class EntityManager : MonoBehaviour
     private void CreateCodex()
     {
         _codex = new WorldCodexService(SimulationRules.Active, _ledger, new EntityCodexPurse(_colonies, _entities));
+        _codex.Anomalies = _anomalies;
         _legislator = new ColonyLegislator(_codex);
         ServiceLocator.Register(_codex);
 
@@ -499,12 +514,30 @@ public partial class EntityManager : MonoBehaviour
 
     private void CreateColonies()
     {
+        if (scenario != null && scenario.ColonyCount > 0)
+        {
+            for (int i = 0; i < scenario.ColonyCount; i++)
+            {
+                var nest = scenario.NestPosition(i, transform.position);
+                AddColony(new Vector3(nest.x, transform.position.y, nest.y));
+            }
+            if (SimulationRules.Active.PredatorCount > 0) _wild = AddColony(transform.position, true);
+            return;
+        }
+
         int n = colonyOrigins != null ? colonyOrigins.Length : 0;
         for (int i = 0; i < n; i++)
             if (colonyOrigins[i] != null) AddColony(colonyOrigins[i].position);
 
         if (_colonies.Count == 0) AddColony(transform.position);
         if (SimulationRules.Active.PredatorCount > 0) _wild = AddColony(transform.position, true);
+    }
+
+    private void ApplyScenarioFood(ChunkFoodIndex foodIndex)
+    {
+        if (foodIndex == null) return;
+        int count = scenario != null ? scenario.BuildZones(transform.position, _foodZones) : 0;
+        foodIndex.SetFoodZones(_foodZones, count);
     }
 
     private ColonyState AddColony(Vector3 position, bool wild = false, TheRavine.Base.PopulationSnapshot.Colony? saved = null)
@@ -620,6 +653,7 @@ public partial class EntityManager : MonoBehaviour
         {
             if (saved == null) CreateColonies();
             else RestoreColonies(saved);
+            ApplyScenarioFood(foodIndex);
             InitializePopulation();
             if (useSavedBrain)
             {
@@ -629,6 +663,15 @@ public partial class EntityManager : MonoBehaviour
             }
             if (this == null || !isActiveAndEnabled || (registry != null && !registry.OwnsPopulation(CapturePopulation))) return;
             if (saved != null) RestoreAgents(saved);
+            else if (scenario != null && scenario.ColonyCount > 0 && scenario.FoundersPerColony > 0)
+            {
+                for (int c = 0; c < _colonies.Count; c++)
+                {
+                    var colony = _colonies[c];
+                    if (colony.IsWild) continue;
+                    for (int i = 0; i < scenario.FoundersPerColony; i++) SpawnEntity(_population.RandomPosition(colony), colony);
+                }
+            }
             else for (int i = 0; i < initialCount; i++)
             {
                 var colony = _colonies[i % _population.CivilCount];
@@ -1277,6 +1320,7 @@ public partial class EntityManager : MonoBehaviour
         _population?.DiscardEntities();
         _soilFeed?.Dispose();
         _simulationLog?.Dispose();
+        _anomalies?.Unbind();
         _puppets?.Dispose();
         for (int i = 0; i < _nestViews.Count; i++)
             if (_nestViews[i] != null) Destroy(_nestViews[i].gameObject);

@@ -256,3 +256,31 @@ With `lifeLogEnabled` the file `life_log_<yyyyMMdd_HHmmss>.csv` has one row per 
 For a birth comparison, use matching worlds with `reproductionTransferEnabled` on and off, and enable `lifeLogEnabled`. Keep the same population cap. For exploration, set `rareActionChance` in the rules asset. A value of 0.05 gives up to 5% additional selection probability at full energy; the chance falls to zero at `curiosityEnergyFloor`. Selection frequencies are tracked per plan and only use opportunities where a verb is in the current mask.
 
 For an architecture comparison, set `wideSocialExecutor` in the rules asset. Its Social widths are 96, 48 and 48. Set `useSavedBrain` off in EntityManager for a fresh start. Compare the two profiles at equal `train_social` totals, including task metrics, survival, and agent tick time. Wide model filenames include `_wide_social`; they cannot be loaded by the standard profile.
+
+## Columns added in revision 9 (stage 0: baseline telemetry)
+
+The thirteen columns are the last ones of every row, after the `interaction_*` columns, in the order below. "Window" columns are sums or ratios over the interval since the previous sample of the same scope; "snapshot" columns are read at the sample. World-only columns are empty in colony rows.
+
+| Column | Scope | Unit | Kind | Meaning and computation |
+|---|---|---|---|---|
+| `tick_ms_mean` | world | ms | window | Mean wall time of one `EntityManager.TickAgents` call, one sample per frame after the tick loop has started (`SimulationLog.NoteTick`, timed in `EntityManager.Update` around the call, only while the log exists). Frames in which the window budget lets no agent tick are included, so the value is per frame, not per agent batch. Empty when no frame was timed |
+| `tick_ms_p95` | world | ms | window | 95th percentile of the same samples from a 0.1 ms histogram (0…100 ms, the last bin collects the rest); the value is the upper edge of the bin, so the resolution is 0.1 ms |
+| `gc_alloc_bytes` | world | bytes | window | `GC.GetAllocatedBytesForCurrentThread` difference over the window: main-thread allocation (not net heap growth, not worker threads). The allocation of the log's own sample is excluded: the counter is re-read after the rows are written |
+| `stress_mean` | both | 0…1, dimensionless | snapshot | Mean `EntityModel.Stress` of the living agents of the colony; world: civil colonies only (the wild colony is excluded). Empty with no agents |
+| `stress_p90` | both | 0…1, dimensionless | snapshot | 90th percentile of `Stress` from a 100-bin histogram, upper edge of the bin (resolution 0.01) |
+| `stress_high_share` | both | 0…1 | snapshot | Share of agents with `Stress >= SimulationRules.stressHighThreshold` (default 0.6) |
+| `social_action_share` | both | 0…1 | window | Δ `give_started` / Σ Δ `<action>_started` of the row; empty when no command started |
+| `delivery_energy_per_agent_min` | both | energy per agent per minute | window | Δ `interaction_delivered_energy` / agents / window length in minutes. Agents: colony row `MemberCount`, world row the civil population at the sample. The window length is the difference of sample times (the first window starts at 0). Empty when there are no agents |
+| `starvation_death_share` | both | 0…1 | window | Δ `deaths_starved` / Δ `died`; empty when nobody died |
+| `population_capped` | both | 0/1 | window | 1 when Δ `birth_fail_capacity` is above 0: at least one spawn request was refused in the window because the population cap (`maxPopulation`, or the slot capacity, or the predator count for the wild colony) left no free slot |
+| `anomaly_transfer_loops` | world | loops | window | A transfer A→B followed by transfers B→A within `anomalyLoopWindow` seconds whose amounts add up to at least the first one (net transfer A→B not positive). Fed by `GiveCommand` (energy actually ingested by the receiver) through `AnomalyDetector.NoteTransfer`; each return amount cancels the open transfers of the opposite direction, newest first, and one cancelled transfer counts once |
+| `anomaly_relief_farm` | world | pairs | window | Ordered pairs whose accumulated relief (`AnomalyDetector.NoteRelief`) in the window exceeded `anomalyReliefPairThreshold`; a pair counts once per window. |
+| `anomaly_vote_concentration` | world | 1/n…1, dimensionless | snapshot | Mean over living laws of the Herfindahl index `Σ s²` of the authors' shares `s` of the energy invested in the law (proposal cost plus `TryInvest`, recorded by `WorldCodexService.Anomalies`). Laws with less than `anomalyMinInvestment` in total are skipped; empty without laws. Only investments recorded since startup are counted |
+
+The anomaly counters only count: they never block a transfer, relief or vote. Their tables are preallocated with `anomalyPairCapacity` entries; entries beyond it are dropped (`AnomalyDetector.DroppedPairs`, `DroppedVotes`).
+
+Reading a stall: `population_capped = 1` with a low `starvation_death_share`, low `hungry_share` and non-zero `birth_fail_capacity` is a cap stall; `population_capped = 0` with a high `starvation_death_share`, high `hungry_share` and low `stock_food` per creature is a food shortage.
+
+## Run file
+
+When the log is opened (first sample), `run_<yyyyMMdd_HHmmss>.json` is written next to `simulation_log_<same stamp>.csv`. Fields: `stamp`, `scenario` (`ExperimentScenario` asset name, `none` without one), `flags` (the ten system flags and signal masks of `SimulationRules` as `name=0/1`), `time_s`, `season_value` (−1…1), `season_phase` (0…1 of `seasonPeriod`), `winter`, `brain_origin` (`fresh`, `loaded`, `mixed` or `none` over the civil colonies; per colony the raw `ColonyState.BrainOrigin`), and `colonies`: `colony_id`, `wild`, `nest_x`, `nest_z`, `arm`, `brain_origin` and, for civil colonies of a scenario, the food modifier of that colony (`food_multiplier`, `food_radius`, `food_start_s`, `food_active_s`, `food_inactive_s`).

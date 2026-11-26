@@ -125,14 +125,42 @@ public sealed class SimulationLog : IDisposable
     private readonly long[] _trainingDelta = new long[ColonyRegistry.MaxColonies * ColonyState.TrainingGroups];
     private readonly long[] _worldTraining = new long[ColonyState.TrainingGroups];
 
+    private const int StressBins = 100;
+    private const int TickBinsPerMs = 10;
+    private const int TickBins = 100 * TickBinsPerMs;
+    private readonly int[]   _stressBins  = new int[ColonyRegistry.MaxColonies * StressBins];
+    private readonly double[] _stressSum  = new double[ColonyRegistry.MaxColonies];
+    private readonly int[]   _stressCount = new int[ColonyRegistry.MaxColonies];
+    private readonly int[]   _stressHigh  = new int[ColonyRegistry.MaxColonies];
+    private readonly int[]   _worldStressBins = new int[StressBins];
+    private readonly int[]   _tickBins = new int[TickBins + 1];
+    private long _tickSamples;
+    private double _tickMsSum;
+    private long _prevAllocated;
+    private long _windowAllocated;
+    private double _prevSampleTime;
+    private double _windowSeconds;
+    private int _anomalyLoops, _anomalyFarm, _anomalyLaws;
+    private float _anomalyConcentration;
+    private readonly string _scenarioName;
+    private readonly string _flagSet;
+    private readonly ExperimentScenario _scenario;
+    private readonly AnomalyDetector _anomalies;
+    private bool _runWritten;
+
     private StreamWriter _writer;
     private bool _disposed;
     private string _stamp;
 
     public bool IsOpen => _writer != null;
 
-    public SimulationLog()
+    public SimulationLog(string scenarioName = null, string flagSet = null, ExperimentScenario scenario = null, AnomalyDetector anomalies = null)
     {
+        _scenarioName = string.IsNullOrEmpty(scenarioName) ? "none" : scenarioName;
+        _flagSet = flagSet ?? string.Empty;
+        _scenario = scenario;
+        _anomalies = anomalies;
+        _prevAllocated = GC.GetAllocatedBytesForCurrentThread();
         try
         {
             string dir = NeuralModelStorage.BaseDirectory;
@@ -152,6 +180,18 @@ public sealed class SimulationLog : IDisposable
         }
     }
 
+    public void NoteTick(long timestampTicks)
+    {
+        if (_writer == null) return;
+        double ms = timestampTicks * 1000d / System.Diagnostics.Stopwatch.Frequency;
+        if (!(ms >= 0d)) return;
+        int bin = (int)(ms * TickBinsPerMs);
+        if (bin > TickBins) bin = TickBins;
+        _tickBins[bin]++;
+        _tickSamples++;
+        _tickMsSum += ms;
+    }
+
     public void Sample(double now, ColonyRegistry colonies, int alive, EnergyLedger ledger, EvolutionService evolution, SpeechBus speech,
         BehaviourDescriptorLog descriptors = null, System.Collections.Generic.List<EntityModel> entities = null, int populationLimit = 0)
     {
@@ -162,7 +202,20 @@ public sealed class SimulationLog : IDisposable
         bool  winter = SeasonClock.IsWinter(time);
         bool  night  = IsNight();
 
+        _windowAllocated = GC.GetAllocatedBytesForCurrentThread() - _prevAllocated;
+        _windowSeconds = now - _prevSampleTime;
+        if (!_runWritten)
+        {
+            _runWritten = true;
+            WriteRunSidecar(now, colonies);
+        }
         SampleStage3(entities);
+        SampleStress(entities);
+        if (_anomalies != null)
+        {
+            _anomalies.ConsumeWindow(out _anomalyLoops, out _anomalyFarm);
+            _anomalyConcentration = _anomalies.SampleConcentration(ServiceLocator.Services.TryGet(out WorldCodexService law) ? law : null, out _anomalyLaws);
+        }
 
         Array.Clear(_world, 0, Stride);
         float worldLifespan = 0f, fill = 0f, rest = 0f, storage = 0f;
@@ -245,6 +298,7 @@ public sealed class SimulationLog : IDisposable
             WriteBirthFailures(_world, 0);
             WriteCodex(ServiceLocator.Services.TryGet(out WorldCodexService codex) ? codex : null, null);
             WriteInteractions(_worldInteractions, 0);
+            WriteBaseline(null, _world, 0, _worldInteractions[(int)ColonyStats.Interaction.DeliveredEnergy], civil, colonies, n);
             _writer.WriteLine();
             ledger?.ResetWindow();
 
@@ -270,11 +324,18 @@ public sealed class SimulationLog : IDisposable
                 WriteBirthFailures(_delta, c * Stride);
                 WriteCodex(null, colony);
                 WriteInteractions(_interactionDelta, c * InteractionCount);
+                WriteBaseline(colony, _delta, c * Stride, _interactionDelta[c * InteractionCount + (int)ColonyStats.Interaction.DeliveredEnergy],
+                    colony.MemberCount, colonies, n);
                 _writer.WriteLine();
             }
             for (int c = 0; c < n; c++) speech?.TablesOf(colonies[c].Index)?.Clear();
             _writer.Flush();
             descriptors?.Sample(_stamp, now, entities);
+            Array.Clear(_tickBins, 0, _tickBins.Length);
+            _tickSamples = 0;
+            _tickMsSum = 0d;
+            _prevSampleTime = now;
+            _prevAllocated = GC.GetAllocatedBytesForCurrentThread();
         }
         catch (Exception e)
         {
@@ -633,6 +694,9 @@ public sealed class SimulationLog : IDisposable
             sb.Append(",codex_multiplier_").Append(SnakeCase(((VarianceAxis)k).ToString()));
         for (int k = 0; k < InteractionCount; k++)
             sb.Append(",interaction_").Append(SnakeCase(((ColonyStats.Interaction)k).ToString()));
+        sb.Append(",tick_ms_mean,tick_ms_p95,gc_alloc_bytes,stress_mean,stress_p90,stress_high_share");
+        sb.Append(",social_action_share,delivery_energy_per_agent_min,starvation_death_share,population_capped");
+        sb.Append(",anomaly_transfer_loops,anomaly_relief_farm,anomaly_vote_concentration");
         return sb.ToString();
     }
 
@@ -697,6 +761,215 @@ public sealed class SimulationLog : IDisposable
             long steps = colony == null ? _worldTraining[g] : _trainingDelta[index * ColonyState.TrainingGroups + g];
             _writer.Write(steps.ToString(Inv));
         }
+    }
+
+    private void SampleStress(System.Collections.Generic.List<EntityModel> entities)
+    {
+        Array.Clear(_stressBins, 0, _stressBins.Length);
+        Array.Clear(_stressSum, 0, _stressSum.Length);
+        Array.Clear(_stressCount, 0, _stressCount.Length);
+        Array.Clear(_stressHigh, 0, _stressHigh.Length);
+        if (entities == null) return;
+
+        float threshold = SimulationRules.Active.StressHighThreshold;
+        for (int i = 0; i < entities.Count; i++)
+        {
+            var e = entities[i];
+            if (e == null || e.IsDisposed || e.Colony == null) continue;
+            int c = e.Colony.Index;
+            if ((uint)c >= (uint)_stressCount.Length) continue;
+            float stress = Mathf.Clamp01(e.Stress);
+            int bin = Math.Min((int)(stress * StressBins), StressBins - 1);
+            _stressBins[c * StressBins + bin]++;
+            _stressSum[c] += stress;
+            _stressCount[c]++;
+            if (stress >= threshold) _stressHigh[c]++;
+        }
+    }
+
+    private void WriteStress(ColonyState colony, ColonyRegistry colonies, int n)
+    {
+        int count = 0, high = 0;
+        double sum = 0d;
+        int[] bins;
+        int binOffset;
+        if (colony != null)
+        {
+            int c = colony.Index;
+            count = _stressCount[c];
+            high = _stressHigh[c];
+            sum = _stressSum[c];
+            bins = _stressBins;
+            binOffset = c * StressBins;
+        }
+        else
+        {
+            Array.Clear(_worldStressBins, 0, StressBins);
+            for (int c = 0; c < n; c++)
+            {
+                if (colonies[c].IsWild) continue;
+                count += _stressCount[c];
+                high += _stressHigh[c];
+                sum += _stressSum[c];
+                for (int b = 0; b < StressBins; b++) _worldStressBins[b] += _stressBins[c * StressBins + b];
+            }
+            bins = _worldStressBins;
+            binOffset = 0;
+        }
+
+        WriteComma();
+        if (count > 0) WriteFloat((float)(sum / count));
+        WriteComma();
+        if (count > 0)
+        {
+            int target = (int)Math.Ceiling(count * 0.9d);
+            int cumulative = 0;
+            int bin = 0;
+            for (; bin < StressBins; bin++)
+            {
+                cumulative += bins[binOffset + bin];
+                if (cumulative >= target) break;
+            }
+            WriteFloat((Math.Min(bin, StressBins - 1) + 1) / (float)StressBins);
+        }
+        WriteComma();
+        if (count > 0) WriteFloat(high / (float)count);
+    }
+
+    private void WriteBaseline(ColonyState colony, int[] d, int o, double deliveredEnergy, int agents, ColonyRegistry colonies, int n)
+    {
+        bool world = colony == null;
+        if (world)
+        {
+            WriteComma();
+            if (_tickSamples > 0) WriteFloat((float)(_tickMsSum / _tickSamples));
+            WriteComma();
+            if (_tickSamples > 0)
+            {
+                long target = (long)Math.Ceiling(_tickSamples * 0.95d);
+                long cumulative = 0;
+                int bin = 0;
+                for (; bin < TickBins; bin++)
+                {
+                    cumulative += _tickBins[bin];
+                    if (cumulative >= target) break;
+                }
+                WriteFloat((bin + 1) / (float)TickBinsPerMs);
+            }
+            WriteComma();
+            _writer.Write(_windowAllocated.ToString(Inv));
+        }
+        else _writer.Write(",,,");
+
+        WriteStress(colony, colonies, n);
+
+        int started = 0;
+        for (int a = 0; a < ActionCount; a++) started += d[o + OffActions + ActionFields * a];
+        WriteComma();
+        if (started > 0) WriteFloat(d[o + OffActions + ActionFields * (int)EntityAction.Give] / (float)started);
+
+        WriteComma();
+        if (agents > 0 && _windowSeconds > 0d) WriteFloat((float)(deliveredEnergy / agents / (_windowSeconds / 60d)));
+
+        int died = d[o + OffDied];
+        WriteComma();
+        if (died > 0) WriteFloat(d[o + OffDeaths + (int)DeathCause.Starved] / (float)died);
+
+        WriteComma();
+        _writer.Write(d[o + OffBirthFails + (int)ColonyStats.BirthFailure.Capacity] > 0 ? '1' : '0');
+
+        if (world)
+        {
+            WriteNext(_anomalyLoops);
+            WriteNext(_anomalyFarm);
+            WriteComma();
+            if (_anomalyLaws > 0) WriteFloat(_anomalyConcentration);
+        }
+        else _writer.Write(",,,");
+    }
+
+    private void WriteRunSidecar(double now, ColonyRegistry colonies)
+    {
+        try
+        {
+            ref readonly var r = ref SimulationRules.Frame;
+            float time = (float)now;
+            float period = Mathf.Max(r.SeasonPeriod, 1f);
+            int civil = 0, loaded = 0;
+            for (int c = 0; c < colonies.Count; c++)
+            {
+                if (colonies[c].IsWild) continue;
+                civil++;
+                if (colonies[c].BrainOrigin != "fresh") loaded++;
+            }
+
+            var sb = new StringBuilder(1024);
+            sb.Append("{\n");
+            sb.Append("  \"stamp\": ").Append(JsonText(_stamp)).Append(",\n");
+            sb.Append("  \"scenario\": ").Append(JsonText(_scenarioName)).Append(",\n");
+            sb.Append("  \"flags\": ").Append(JsonText(_flagSet)).Append(",\n");
+            sb.Append("  \"time_s\": ").Append(now.ToString("G9", Inv)).Append(",\n");
+            sb.Append("  \"season_value\": ").Append(SeasonClock.Value(time).ToString("G6", Inv)).Append(",\n");
+            sb.Append("  \"season_phase\": ").Append((time / period - Mathf.Floor(time / period)).ToString("G6", Inv)).Append(",\n");
+            sb.Append("  \"winter\": ").Append(SeasonClock.IsWinter(time) ? "true" : "false").Append(",\n");
+            sb.Append("  \"brain_origin\": ").Append(JsonText(civil == 0 ? "none" : loaded == 0 ? "fresh" : loaded == civil ? "loaded" : "mixed")).Append(",\n");
+            sb.Append("  \"colonies\": [");
+
+            int ordinal = 0;
+            bool first = true;
+            for (int c = 0; c < colonies.Count; c++)
+            {
+                var colony = colonies[c];
+                if (!first) sb.Append(',');
+                first = false;
+                sb.Append("\n    {\"colony_id\": ").Append(colony.ColonyId.ToString(Inv));
+                sb.Append(", \"wild\": ").Append(colony.IsWild ? "true" : "false");
+                sb.Append(", \"nest_x\": ").Append(colony.Nest.Position.x.ToString("G6", Inv));
+                sb.Append(", \"nest_z\": ").Append(colony.Nest.Position.y.ToString("G6", Inv));
+                sb.Append(", \"arm\": ").Append(JsonText(ColonyArms.Name(colony.Arm)));
+                sb.Append(", \"brain_origin\": ").Append(JsonText(colony.BrainOrigin));
+                if (!colony.IsWild)
+                {
+                    if (_scenario != null && ordinal < _scenario.ColonyCount)
+                    {
+                        var sc = _scenario.ColonyAt(ordinal);
+                        sb.Append(", \"food_multiplier\": ").Append(sc.foodMultiplier.ToString("G6", Inv));
+                        sb.Append(", \"food_radius\": ").Append(sc.foodRadius.ToString("G6", Inv));
+                        sb.Append(", \"food_start_s\": ").Append(sc.foodStartSeconds.ToString("G6", Inv));
+                        sb.Append(", \"food_active_s\": ").Append(sc.foodActiveSeconds.ToString("G6", Inv));
+                        sb.Append(", \"food_inactive_s\": ").Append(sc.foodInactiveSeconds.ToString("G6", Inv));
+                    }
+                    ordinal++;
+                }
+                sb.Append('}');
+            }
+            sb.Append("\n  ]\n}\n");
+
+            string path = Path.Combine(NeuralModelStorage.BaseDirectory, $"run_{_stamp}.json");
+            File.WriteAllText(path, sb.ToString(), new UTF8Encoding(false));
+        }
+        catch (Exception e)
+        {
+            RavineLog.Warning($"SimulationLog: не удалось записать run-файл: {e.Message}");
+        }
+    }
+
+    private static string JsonText(string value)
+    {
+        var sb = new StringBuilder((value?.Length ?? 0) + 2);
+        sb.Append('"');
+        if (value != null)
+        {
+            for (int i = 0; i < value.Length; i++)
+            {
+                char ch = value[i];
+                if (ch == '"' || ch == '\\') sb.Append('\\').Append(ch);
+                else if (ch < ' ') sb.Append(' ');
+                else sb.Append(ch);
+            }
+        }
+        sb.Append('"');
+        return sb.ToString();
     }
 
     private static string CasteName(int caste) => SnakeCase(((Caste)caste).ToString());

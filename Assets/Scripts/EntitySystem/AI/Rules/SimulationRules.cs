@@ -627,6 +627,8 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float SkillXpLevelOffset;
         public readonly float SkillSolverInterval;
         public readonly float SkillSweepInterval;
+        public readonly bool MaskStressInput;
+        public readonly bool MaskTaskSignal;
         public readonly float[] PlanMinSecondsByPlan;
         public readonly float[] PlanMaxSecondsByPlan;
         public readonly float[] CasteAffinityLog;
@@ -1265,6 +1267,8 @@ public sealed partial class SimulationRules : ScriptableObject
             SkillXpLevelOffset = r.skillXpLevelOffset;
             SkillSolverInterval = r.skillSolverInterval;
             SkillSweepInterval = r.skillSweepInterval;
+            MaskStressInput = r.maskStressInput;
+            MaskTaskSignal = r.maskTaskSignal;
             PlanMinSecondsByPlan = r.FillPlanSeconds(r.planMinSecondsByPlan, r.planMinSeconds, PlanMinBuf);
             PlanMaxSecondsByPlan = r.FillPlanSeconds(r.planMaxSecondsByPlan, r.planMaxSeconds, PlanMaxBuf);
             CasteAffinityLog     = r.FillCasteAffinityLog();
@@ -1458,6 +1462,7 @@ public sealed partial class SimulationRules : ScriptableObject
         if (!(dangerDirectionMinMass >= 0f)) dangerDirectionMinMass = 0f;
         ValidateSkills();
         ValidateCodex();
+        ValidateSystems();
     }
 
     private static SimulationRules _active;

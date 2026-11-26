@@ -28,6 +28,7 @@ public sealed class WorldCodexService
     private float _priceElapsed;
     private float _priceWindowTime;
 
+    public AnomalyDetector Anomalies { get; set; }
     public int Version { get; private set; }
     public int LawCount => _count;
     public int ProposalsAccepted { get; private set; }
@@ -134,6 +135,7 @@ public sealed class WorldCodexService
         law.Created = SimulationClock.Time;
         law.Alive = 1;
         lawId = law.Id;
+        Anomalies?.NoteInvestment(law.Id, authorId, cost);
         _dirty = true;
         return true;
     }
@@ -150,6 +152,7 @@ public sealed class WorldCodexService
         if (!Spend(authorId, energy)) return Fail(CodexError.InsufficientEnergy, out error);
 
         _laws[slot].Support += CodexMath.VoteGain(energy, _rules.CodexVoteScale);
+        Anomalies?.NoteInvestment(lawId, authorId, energy);
         _dirty = true;
         return true;
     }

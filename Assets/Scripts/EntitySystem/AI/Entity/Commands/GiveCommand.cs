@@ -45,6 +45,7 @@ public class GiveCommand : EntityCommand
         if (given > 0f)
         {
             victim.NoteGift(model.Stats);
+            AnomalyDetector.Current?.NoteTransfer(model.EntityId, victim.EntityId, given, SimulationClock.TimeD);
             var stats = model.Colony?.Stats;
             stats?.RecordInteraction(ColonyStats.Interaction.Fed);
             stats?.RecordInteraction(ColonyStats.Interaction.GiftEnergy, given);
