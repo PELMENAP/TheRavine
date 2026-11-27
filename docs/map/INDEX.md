@@ -14,7 +14,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Core/ServiceLocator` | 3 | 311 |
 | `Assets/Scripts/Core/Settings` | 5 | 904 |
 | `Assets/Scripts/Core/Settings/GameSettings` | 2 | 110 |
-| `Assets/Scripts/Core/Settings/WorldData` | 7 | 683 |
+| `Assets/Scripts/Core/Settings/WorldData` | 7 | 695 |
 | `Assets/Scripts/Core/Settings/WorldSettings` | 2 | 142 |
 | `Assets/Scripts/Core/Storage` | 5 | 352 |
 | `Assets/Scripts/Core/Timer` | 4 | 271 |
@@ -41,7 +41,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Rules` | 14 | 3673 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI` | 24 | 3901 |
 | `Assets/Scripts/EntitySystem/AI/Skills` | 19 | 2174 |
-| `Assets/Scripts/EntitySystem/AI/Social` | 2 | 296 |
+| `Assets/Scripts/EntitySystem/AI/Social` | 2 | 302 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 8 | 1298 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
 | `Assets/Scripts/EntitySystem/Casino` | 4 | 806 |
@@ -116,7 +116,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 948 |
-| `Assets/Tests/EditMode` | 86 | 14282 |
+| `Assets/Tests/EditMode` | 86 | 14306 |
 
 ## Assemblies
 
