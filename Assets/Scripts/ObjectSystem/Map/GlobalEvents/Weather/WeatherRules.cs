@@ -41,10 +41,13 @@ namespace TheRavine.Generator
         [Min(1f)] public float cloudSpread = 1.4f;
         [Range(0f, 1f)] public float cloudBase = 0.4f;
 
-        [Header("Cloud layer")]
-        [Tooltip("Cloud base elevation in world coordinates. Used by clouds, rain shafts and lightning.")]
-        public float cloudPlaneY = 650f;
-        [Range(0f, 1f)] public float fairWeatherCover = 0.36f;
+        [Header("Cloud layers")]
+        [Tooltip("Lowest cloud elevation in world coordinates. Also used by rain shafts and lightning.")]
+        public float cloudPlaneY = 1000f;
+        public float middleCloudPlaneY = 2000f;
+        public float cirrusCloudPlaneY = 4000f;
+        [Range(0f, 1f)] public float fairWeatherCover = 0.46f;
+        [Range(0f, 1f)] public float cloudClumping = 0.85f;
 
         [Header("Ground")]
         [Min(0f)] public float virgaStrength = 0.8f;
@@ -85,6 +88,8 @@ namespace TheRavine.Generator
             moistureMax = Mathf.Max(moistureMax, moistureMin);
             chargeMax = Mathf.Max(chargeMax, chargeMin);
             cloudSpread = Mathf.Max(cloudSpread, 1f);
+            middleCloudPlaneY = Mathf.Max(middleCloudPlaneY, cloudPlaneY + 1f);
+            cirrusCloudPlaneY = Mathf.Max(cirrusCloudPlaneY, middleCloudPlaneY + 1f);
             groundThreshold = Mathf.Max(groundThreshold, strikeThreshold);
             candidateSamples = Mathf.Max(candidateSamples, 1);
             strikeHistory = Mathf.Max(strikeHistory, 1);

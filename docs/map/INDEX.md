@@ -82,7 +82,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/ObjectSystem` | 2 | 196 |
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents` | 3 | 196 |
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire` | 3 | 920 |
-| `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather` | 7 | 1562 |
+| `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather` | 7 | 1589 |
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Wind` | 5 | 790 |
 | `Assets/Scripts/ObjectSystem/Map/Tools` | 3 | 2970 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 23 | 4264 |

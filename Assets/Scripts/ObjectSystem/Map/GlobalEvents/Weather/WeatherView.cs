@@ -46,6 +46,7 @@ namespace TheRavine.Generator
         private static readonly int ShaftsId    = Shader.PropertyToID("_RainShafts");
         private static readonly int ShadowId    = Shader.PropertyToID("_WeatherShadow");
         private static readonly int CloudPlaneId = Shader.PropertyToID("_CloudPlane");
+        private static readonly int CloudLayerId = Shader.PropertyToID("_CloudLayer");
         private const float CloudPresence = 0.01f;
 
         private static readonly ProfilerMarker UploadMarker = new("WeatherView.Upload");
@@ -64,7 +65,7 @@ namespace TheRavine.Generator
         private readonly Material _ownedDrops;
         private readonly Material _ownedShafts;
         private readonly Material _ownedCloud;
-        private readonly MaterialPropertyBlock _cloudProps = new();
+        private readonly MaterialPropertyBlock[] _cloudProps = { new(), new(), new() };
         private readonly MaterialPropertyBlock _dropProps = new();
         private readonly MaterialPropertyBlock _shaftProps = new();
         private readonly Texture2D _texture;
@@ -190,7 +191,7 @@ namespace TheRavine.Generator
             _shaftParams = CreateParams(shafts, _shaftProps);
             if (cloud != null)
             {
-                _cloudParams = CreateParams(cloud, _cloudProps);
+                _cloudParams = CreateParams(cloud, _cloudProps[0]);
                 _hasCloud = true;
             }
             _lightning = LightningView.TryCreate(weather, settings.lightning);
@@ -306,12 +307,33 @@ namespace TheRavine.Generator
             var rules = _weather.Rules;
             if (!_hasCloud || (!_cloudPresent && rules.fairWeatherCover <= 0f)) return;
 
-            float extent = math.min(_settings.cloudExtent, camera.farClipPlane * 0.9f);
-            float y = rules.cloudPlaneY;
-            if (math.abs(y - eye.y) >= camera.farClipPlane) return;
-            _cloudProps.SetVector(CloudPlaneId, new Vector4(extent, y, time, rules.fairWeatherCover));
-            _cloudParams.worldBounds = new Bounds(new Vector3(eye.x, y, eye.z), new Vector3(extent * 2f, 16f, extent * 2f));
-            Graphics.RenderPrimitives(in _cloudParams, MeshTopology.Triangles, 6, 1);
+            float height = math.abs(rules.cloudPlaneY - eye.y);
+            if (rules.fairWeatherCover > 0f) height = math.max(height, math.abs(rules.cirrusCloudPlaneY - eye.y));
+            float extent = math.max(_settings.cloudExtent, height * 2.5f);
+            float maxDistance = math.sqrt(height * height + 2f * extent * extent);
+            float projectionScale = math.min(1f, camera.farClipPlane * 0.95f / maxDistance);
+
+            if (rules.fairWeatherCover > 0f)
+            {
+                DrawCloudLayer(camera, eye, time, extent, projectionScale, 2, rules.cirrusCloudPlaneY);
+                DrawCloudLayer(camera, eye, time, extent, projectionScale, 1, rules.middleCloudPlaneY);
+            }
+            DrawCloudLayer(camera, eye, time, extent, projectionScale, 0, rules.cloudPlaneY);
+        }
+
+        private void DrawCloudLayer(Camera camera, float3 eye, float time, float extent, float projectionScale, int layer, float y)
+        {
+            var rules = _weather.Rules;
+            var properties = _cloudProps[layer];
+            properties.SetVector(CloudPlaneId, new Vector4(extent, y, time, rules.fairWeatherCover));
+            properties.SetVector(CloudLayerId, new Vector4(projectionScale, layer, rules.cloudClumping, 0f));
+
+            RenderParams draw = _cloudParams;
+            draw.camera = camera;
+            draw.matProps = properties;
+            draw.worldBounds = new Bounds(eye + new float3(0f, (y - eye.y) * projectionScale, 0f),
+                new Vector3(2f * extent * projectionScale, 16f, 2f * extent * projectionScale));
+            Graphics.RenderPrimitives(in draw, MeshTopology.Triangles, 6, 1);
         }
 
         private void UpdateSky(float2 at, float dt)

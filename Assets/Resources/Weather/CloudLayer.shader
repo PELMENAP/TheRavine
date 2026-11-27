@@ -3,7 +3,7 @@ Shader "The Ravine/Weather/Cloud Layer"
     Properties
     {
         [Header(Shape)]
-        _Scale ("Noise Scale", Float) = 0.0016
+        _Scale ("Fine Detail Scale", Float) = 0.0016
         _Scroll ("Drift Speed", Float) = 4
         _Softness ("Edge Softness", Range(0.02, 0.5)) = 0.14
         _Opacity ("Opacity", Range(0, 1)) = 0.92
@@ -64,6 +64,7 @@ Shader "The Ravine/Weather/Cloud Layer"
             CBUFFER_END
 
             float4 _CloudPlane;
+            float4 _CloudLayer;
 
             struct Varyings
             {
@@ -78,7 +79,7 @@ Shader "The Ravine/Weather/Cloud Layer"
 
                 Varyings o;
                 o.positionWS = float3(camera.x + (corner.x * 2.0 - 1.0) * _CloudPlane.x, _CloudPlane.y, camera.z + (corner.y * 2.0 - 1.0) * _CloudPlane.x);
-                o.positionCS = TransformWorldToHClip(o.positionWS);
+                o.positionCS = TransformWorldToHClip(lerp(camera, o.positionWS, _CloudLayer.x));
                 return o;
             }
 
@@ -88,38 +89,60 @@ Shader "The Ravine/Weather/Cloud Layer"
                 return lerp(n, n * 0.78 + WeatherValueNoise(p * 4.37 + 9.1) * 0.22, detail);
             }
 
-            float CloudDensity(float2 xz, float2 drift, float detail)
+            float CloudDensity(float2 xz, float2 drift, float detail, float cover, float layer)
             {
-                float cover = saturate(SampleWeather(float3(xz.x, 0.0, xz.y)).cloud + _CloudPlane.w);
                 if (cover <= 0.004) return 0.0;
 
-                float n = CloudNoise((xz + drift) * _Scale, detail);
+                float2 p = xz + drift + layer * float2(3417.0, 7193.0);
+                float fine = CloudNoise(p * _Scale, detail);
+                float n;
+                if (layer > 1.5)
+                {
+                    float2 feather = float2(dot(p, float2(0.8, 0.6)), dot(p, float2(-0.6, 0.8))) * 0.0011;
+                    feather.y += 0.45 * WeatherValueNoise(feather * 0.6) + 0.3 * sin(feather.x * 1.4);
+                    float strands = WeatherValueNoise(feather * float2(0.25, 5.0));
+                    float veil = WeatherValueNoise(feather * float2(0.7, 1.5));
+                    n = strands * 0.58 + veil * 0.32 + fine * 0.1;
+                }
+                else
+                {
+                    float2 shape = p * lerp(0.0016, 0.0008, layer);
+                    float clustered = WeatherValueNoise(shape) * 0.68
+                                    + WeatherValueNoise(shape * 2.07 + 5.3) * 0.32;
+                    n = lerp(fine, clustered, _CloudLayer.z);
+                }
+
                 float threshold = 1.0 - cover;
                 return smoothstep(threshold - _Softness, threshold + _Softness, n) * saturate(cover * 1.25);
             }
 
-            half4 frag(Varyings i) : SV_Target
+            half4 frag(Varyings i, out float depth : SV_Depth) : SV_Target
             {
                 float2 xz = i.positionWS.xz;
                 float distanceXZ = length(xz - _WorldSpaceCameraPos.xz);
                 float fade = 1.0 - smoothstep(0.55, 1.0, distanceXZ / max(_CloudPlane.x, 1.0));
                 if (fade <= 0.002) discard;
 
-                float2 drift = float2(0.8, 0.6) * (_Scroll * _CloudPlane.z);
-                float density = CloudDensity(xz, drift, 1.0);
+                float layer = _CloudLayer.y;
+                WeatherSample w = (WeatherSample)0;
+                if (layer < 0.5) w = SampleWeather(i.positionWS);
+                float cover = saturate(_CloudPlane.w * (1.0 - 0.12 * layer) + w.cloud);
+                float2 drift = float2(0.8, 0.6) * (_Scroll * _CloudPlane.z * (1.0 + 0.4 * layer));
+                float density = CloudDensity(xz, drift, 1.0, cover, layer);
                 if (density <= 0.004) discard;
 
                 Light sun = GetMainLight();
                 float2 toSun = sun.direction.xz / max(sun.direction.y, 0.2);
                 float thickness = 0.0;
-                thickness += CloudDensity(xz + toSun * (_StepLength * 1.0), drift, 0.0);
-                thickness += CloudDensity(xz + toSun * (_StepLength * 2.0), drift, 0.0);
-                thickness += CloudDensity(xz + toSun * (_StepLength * 3.0), drift, 0.0);
-                thickness += CloudDensity(xz + toSun * (_StepLength * 4.0), drift, 0.0);
-                thickness += CloudDensity(xz + toSun * (_StepLength * 5.0), drift, 0.0);
+                if (layer < 1.5)
+                {
+                    float2 step = toSun * _StepLength;
+                    thickness += CloudDensity(xz + step, drift, 0.0, cover, layer);
+                    thickness += CloudDensity(xz + step * 2.0, drift, 0.0, cover, layer);
+                    thickness += CloudDensity(xz + step * 4.0, drift, 0.0, cover, layer);
+                }
                 float transmit = exp(-thickness * _Absorb);
 
-                WeatherSample w = SampleWeather(i.positionWS);
                 half3 ambient = WeatherAmbient() * _Ambient;
                 half3 lit = sun.color * (transmit * _Sun);
                 half3 body = _CloudColor.rgb * (ambient + lit);
@@ -127,7 +150,16 @@ Shader "The Ravine/Weather/Cloud Layer"
                 body = lerp(body, _StormColor.rgb * (ambient + lit * 0.35), storm);
                 body += _FlashColor.rgb * (_LightningFlash * _FlashGain * (0.35 + density));
 
-                return half4(body, density * _Opacity * fade);
+                float4 worldClip = TransformWorldToHClip(i.positionWS);
+                float clipDepth = worldClip.z / worldClip.w;
+                #if UNITY_REVERSED_Z
+                    depth = saturate(clipDepth);
+                #else
+                    depth = saturate((clipDepth - UNITY_NEAR_CLIP_VALUE) / (1.0 - UNITY_NEAR_CLIP_VALUE));
+                #endif
+
+                float layerOpacity = layer > 1.5 ? 0.58 : 1.0 - layer * 0.18;
+                return half4(body, density * _Opacity * fade * layerOpacity);
             }
             ENDHLSL
         }
