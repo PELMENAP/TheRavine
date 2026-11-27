@@ -58,6 +58,7 @@ namespace TheRavine.Base
         {
             if (disposed) return;
             disposed = true;
+            WorldDayPhase.Clear();
 
             serverTime?.Dispose();
             isDay?.Dispose();
@@ -101,6 +102,7 @@ namespace TheRavine.Base
 
                     localTime = Mathf.Repeat(localTime + diff * Mathf.Min(dt * 5f, 1f), 1f);
                     normalizedTime.Value = localTime;
+                    WorldDayPhase.Value = localTime;
 
                     bool nowDay = localTime >= DayConstants.DayStart && localTime <= DayConstants.DayEnd;
                     isDay.Value = nowDay;

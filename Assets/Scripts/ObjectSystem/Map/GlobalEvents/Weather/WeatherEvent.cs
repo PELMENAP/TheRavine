@@ -36,7 +36,6 @@ namespace TheRavine.Generator
         private int2 _origin;
 
         private WindField _wind;
-        private DayCycle _dayCycle;
         private WeatherView _view;
         private float _accumulator;
         private float _heat;
@@ -137,7 +136,7 @@ namespace TheRavine.Generator
                 float area = math.min((_map.NalReach + 0.5f) * MapGenerator.chunkSize + _rules.spawnMargin, half);
                 float limit = area + _rules.spawnMargin;
 
-                float dayPhase = CurrentDayPhase();
+                float dayPhase = WorldDayPhase.Value;
                 float season = _events.SeasonValue(now);
                 bool winter = _events.IsWinter(now);
                 _heat = WeatherMath.Heat(dayPhase, season, _rules);
@@ -185,12 +184,6 @@ namespace TheRavine.Generator
                 StepIndex++;
                 Version++;
             }
-        }
-
-        private float CurrentDayPhase()
-        {
-            if (_dayCycle == null && !ServiceLocator.Services.TryGet(out _dayCycle)) return 0f;
-            return _dayCycle.NormalizedTime.CurrentValue;
         }
 
         private float2 CurrentWind()
@@ -322,7 +315,6 @@ namespace TheRavine.Generator
             if (_windFallback.IsCreated) _windFallback.Dispose();
             if (_strikes.IsCreated) _strikes.Dispose();
             _wind = null;
-            _dayCycle = null;
             _count = 0;
         }
     }
