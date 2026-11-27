@@ -180,6 +180,7 @@ All are indexed by `EntityModel.ManagerIndex` and expose `RemoveSwapBack`. The r
 - Log columns: `docs/simulation_log.md`. Action and property audits: `docs/audit/action_census.md`, `docs/audit/property_system_matrix.md`.
 - Laws that change rule axes at run time (codex): `docs/map/codex.md`; `EnergyFlows.Codex` is the outflow of spent votes.
 - Rules are partial files `SimulationRules.<Area>.cs` in `Assets/Scripts/EntitySystem/AI/Rules/`; the asset is `Assets/Scripts/EntitySystem/AI/SimulationRules.asset`.
+- Experiment rule set: the menu `Tools/Ravine/Rules/Create or Update Experiment Rules` (`Assets/Scripts/Editor/ExperimentRulesMenu.cs`) copies the main asset to a sibling asset named SimulationRules.Experiment (created on first run) and switches on `stressSourcesEnabled`, `socialReliefEnabled`, `helpLogEnabled` and `simulationLogEnabled`; the main asset keeps them off (`RulesDefaultsTests.SystemFlagsInTheAssetAreOff`). Assign the copy to `EntityManager.rules` for an experiment.
 
 ## Invariants
 
