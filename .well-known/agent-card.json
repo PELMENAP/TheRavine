@@ -2,8 +2,8 @@
   "name": "The Ravine",
   "description": "Open-source multi-agent artificial-life sandbox where humans and AI agents live in one world under the same rules. Behaviour emerges from learning and adaptation, not from scripts.",
   "url": "https://github.com/PELMENAP/TheRavine",
-  "documentationUrl": "https://github.com/PELMENAP/TheRavine/blob/main/README.md",
-  "llmsTxtUrl": "https://github.com/PELMENAP/TheRavine/blob/main/llms.txt",
+  "documentationUrl": "https://pelmenap.github.io/TheRavine/README.md",
+  "llmsTxtUrl": "https://pelmenap.github.io/TheRavine/llms.txt",
   "version": "unreleased",
   "license": "Apache-2.0",
   "provider": {

@@ -4,7 +4,7 @@ using System.Threading;
 using System;
 using UnityEngine;
 
-public class MoveAlongPathCommand : ICommand
+public class MoveAlongPathCommand : IScheduledCommand
 {
     private Transform transform;
     private List<Vector3> path;

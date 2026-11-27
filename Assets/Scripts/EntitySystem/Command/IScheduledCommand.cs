@@ -1,6 +1,6 @@
 using Cysharp.Threading.Tasks;
 
-public interface ICommand
+public interface IScheduledCommand
 {
     UniTask ExecuteAsync();
     void Cancel();

@@ -5,9 +5,11 @@ Read `docs/map/world.md` first; do not read `Assets/Scripts/ObjectSystem/Map/Too
 
 ## Data
 
-- `LandformSettings` (`Assets/Scripts/ObjectSystem/Map/Tools/NoiseLayerSettings.cs`): centre in (continentalness, ruggedness), height scale and offset, ridge, warp, terraces, river width, carve and warp, erosion multiplier.
+- `LandformSettings` (`Assets/Scripts/ObjectSystem/Map/Tools/NoiseLayerSettings.cs`):
+  centre in (continentalness, ruggedness), height scale and offset, ridge, warp, terraces, river width, carve and warp, erosion multiplier.
 - `LandformPresets.All` (`Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs/LandformPresets.cs`): `Hills` is the identity and is first.
-- `ChunkGenerationSettings`: `landforms`, `continentalnessSettings`, `ruggednessSettings`, `ridgeNoiseSettings`, `landformWarpSettings`, `landformBlendRadius`, `landformBaseWeight`, `landformContrast`.
+- `ChunkGenerationSettings`: `landforms`, `continentalnessSettings`, `ruggednessSettings`, `ridgeNoiseSettings`, `landformWarpSettings`, `landformBlendRadius`, `landformBaseWeight`,
+  `landformContrast`.
 - `ChunkGenerator` bakes `landforms` into a persistent `NativeArray<LandformParams>` and owns `riverShapeMap` and `erosionScaleMap`.
 
 ## Flow

@@ -4,15 +4,15 @@ using System.Threading;
 
 public class CommandScheduler
 {
-    private readonly Queue<ICommand> _commands = new();
-    private ICommand _currentCommand;
+    private readonly Queue<IScheduledCommand> _commands = new();
+    private IScheduledCommand _currentCommand;
     public bool _isProcessing { get; private set; }
     private CancellationTokenSource _cts = new();
-    private ICommand _defaultCommand;
+    private IScheduledCommand _defaultCommand;
 
-    public void AddCommand(ICommand command) => _commands.Enqueue(command);
+    public void AddCommand(IScheduledCommand command) => _commands.Enqueue(command);
 
-    public void SetDefaultCommand(ICommand defaultCommand) => _defaultCommand = defaultCommand;
+    public void SetDefaultCommand(IScheduledCommand defaultCommand) => _defaultCommand = defaultCommand;
 
     public async UniTask ProcessCommandsAsync()
     {

@@ -25,6 +25,7 @@ Tests: `Assets/Tests/EditMode/FireMathTests.cs`, `Assets/Tests/EditMode/WildWind
 | `SkyCover` | `Assets/Scripts/Core/SkyCover.cs` | Static cloud cover and rain over the camera; written by `WeatherView`, read by `DayCycle` and `FogCycle` |
 | `SeasonClockSource` | `Assets/Scripts/EntitySystem/AI/Colony/SeasonClockSource.cs` | `IMapSeason` over `SeasonClock`, incl. `WinterApproach`; set by `EntityManager` |
 
+`MapGenerator.mapEventRules` is the rules asset; unset gives defaults and a warning.
 ## Data flow
 
 1. `MapGenerator.SetUp` creates `GlobalMapEvents` after `RandomTickService`; it registers `FireEvent` as a tick handler.
@@ -38,8 +39,11 @@ Tests: `Assets/Tests/EditMode/FireMathTests.cs`, `Assets/Tests/EditMode/WildWind
 6. Spread: `SpreadAttempts(size)` random cells within `SpreadReach(size)` cells, chance falls with distance and follows the wind plus `WeatherEvent.WindAt`.
 7. A cell of a multi-cell object resolves to its primary cell; the burning key is always the primary cell.
 8. Heat: `HeatDamageAt(p)` is `damagePerSecond` scaled by cover inside `HeatRadius(size)`; `HeatBounds` bounds all heat.
-9. Agents take heat once per fire step (`EntityManager.ApplyFireHeat`, `StepIndex`, `LastStep`); players in `PlayerEntity` metabolism. In the same pass `FindNearestBurning` (`TryFindNearestBurning`) gives an agent within `fireSenseRadius` cells the nearest burning cell, and `EntityModel.ReportHazard` turns it into a threat source before any damage.
-10. `FireEvent` keeps the burning keys in a dense list in step with the hash (`FireCell.Slot`, swap-back); `TryFindNearestBurning` scans it when it holds fewer than (2R+1)² cells, else the square (`FindNearestBurningDense` and `FindNearestBurning` agree, ties included).
+9. Agents take heat once per fire step (`EntityManager.ApplyFireHeat`, `StepIndex`, `LastStep`); players in `PlayerEntity` metabolism.
+   In the same pass `FindNearestBurning` (`TryFindNearestBurning`) gives an agent within `fireSenseRadius` cells the nearest burning cell,
+   and `EntityModel.ReportHazard` turns it into a threat source before any damage.
+10. `FireEvent` keeps the burning keys in a dense list in step with the hash (`FireCell.Slot`, swap-back);
+    `TryFindNearestBurning` scans it when it holds fewer than (2R+1)² cells, else the square (`FindNearestBurningDense` and `FindNearestBurning` agree, ties included).
 11. `FireView` rebuilds one `GraphicsBuffer` when `FireEvent.Version` changes and draws two mesh-less `Graphics.RenderPrimitives` calls.
 
 ## Wild winds

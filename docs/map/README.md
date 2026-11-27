@@ -7,13 +7,17 @@ One map per subsystem. Open only the map of the area the task touches; the routi
 | `docs/map/core.md` | Entry point, scene lifecycle, services, saves, settings, timers, input, sound, day cycle |
 | `docs/map/entities.md` | `AEntity`, components, player / mob entities, mob streaming, small gameplay modules |
 | `docs/map/player-net.md` | Player controller, Netcode, server authority, camera input |
-| `docs/map/ai.md` | Agents, colonies, shared brain, learning, perception, speech, debug |
+| `docs/map/ai.md` | Agents, shared brain, perception, speech, per-agent systems |
+| `docs/map/ai-colony.md` | Population checkpoints, colonies, reseed, fission, nest and caste state |
+| `docs/map/ai-skills-stress.md` | Skill graph, stress, social relief, help log |
+| `docs/map/ai-experiments.md` | Experiment arms, ablations, control scenario, logs, headless runs |
 | `docs/map/codex.md` | Laws over rule axes: price-bounded admissibility, support, aggregation, colony legislator |
 | `docs/map/virology.md` | Genome tape, ribosome, strains, infection |
-| `docs/map/world.md` | Chunks, terrain, objects, random ticks, NAL, camera rings, rendering |
+| `docs/map/world.md` | Chunks, terrain, objects, collision, random ticks, NAL |
+| `docs/map/world-camera.md` | Camera rings and rendering |
 | `docs/map/ravine.md` | Ravine profile: elevation by world z, wall, plateau generator, relative water |
 | `docs/map/landforms.md` | Landform layer: local terrain, river and erosion rules from blended presets |
-| `docs/map/map-events.md` | `GlobalMapEvents` over `MapGenerator`: fire, later weather |
+| `docs/map/map-events.md` | `GlobalMapEvents` over `MapGenerator`: fire, wild winds, weather |
 | `docs/map/jobs.md` | Agent motion, move planner, bird boids, menu boids |
 | `docs/map/inventory-ui.md` | Inventory, craft, item data, UI |
 | `docs/map/terminal.md` | Terminal, Rive interpreter, gestures |
@@ -24,13 +28,15 @@ One map per subsystem. Open only the map of the area the task touches; the routi
 ## Tools
 
 - `python3 tools/docmap.py gen` rewrites `INDEX.md` and `LARGE_FILES.md`.
-- `python3 tools/docmap.py check` fails on a path that does not exist and on a backticked name that does not occur in the code.
+- `python3 tools/docmap.py check` fails on a path that does not exist, on a backticked name that does not occur in the code and on a map over budget (rule 1).
 - `python3 tools/docmap.py check --strict` also fails when the generated files are stale.
-- CI runs the check on every push: `.github/workflows/docs.yml`.
+- `python3 tools/rulesframe.py gen` rewrites `SimulationRules.Frame.g.cs` (`RulesFrame`) from the `[FrameField]` fields;
+  `check` fails on a stale file, a field without a member or a member without a source.
+- CI runs both checks on every push: `.github/workflows/docs.yml`.
 
 ## Rules for these files
 
-1. Size budget: `CLAUDE.md` 80 lines, a map 150 lines, a nested `CLAUDE.md` 30 lines. Over budget means split, not grow.
+1. Size budget, checked by `docmap.py`: `CLAUDE.md` 80 lines, a map 150 lines, a nested `CLAUDE.md` 30 lines, any line 200 characters. Over budget means split, not grow.
 2. One fact per line, under 200 characters. A search hit must be usable alone.
 3. Every path starts at the repository root.
 4. A map describes the present. History belongs to `git log`; findings and their status to `docs/audit/`.
@@ -72,3 +78,4 @@ Applied when a file is created or touched for another reason; no mass refactor.
 4. In hot systems split by tick phase, so the file name says whether the code is hot (`EntityModel.Cycle.cs`).
 5. A new top-level folder under `Assets/Scripts` gets its own asmdef.
 6. A renamed or moved file is moved with `git mv` together with its `.meta`.
+7. A new interface needs a second implementation or a test double; otherwise use the concrete type.

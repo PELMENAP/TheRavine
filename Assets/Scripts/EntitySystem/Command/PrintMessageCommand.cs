@@ -1,7 +1,7 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-public class PrintMessageCommand : ICommand
+public class PrintMessageCommand : IScheduledCommand
 {
     private string _message;
     private System.Threading.CancellationTokenSource _cts = new System.Threading.CancellationTokenSource();

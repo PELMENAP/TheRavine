@@ -12,9 +12,11 @@ Tests: `Assets/Tests/EditMode/ViralPayloadPoolTests.cs`, `Assets/Tests/EditMode/
 | `InfectionService` | `Assets/Scripts/EntitySystem/Virology/InfectionService.cs` | Transmission between hosts: contact, bite, gift, payload; recombination |
 | `VirologyRuntime` | `Assets/Scripts/EntitySystem/Virology/VirologyRuntime.cs` | Static tables built once: `Descriptors`, `CellBias`, `Prototype` |
 | `TranslationTable` | `Assets/Scripts/EntitySystem/Virology/TranslationTable.cs` | Codon → protein lookup per lineage; LUT built by a Burst job; shared through `TranslationTableRegistry` |
-| `VirologyEvents` | `Assets/Scripts/EntitySystem/Virology/VirologyEvents.cs` | Static counters: infections (a viral segment inserted by `TryInsertSegment`), recoveries (`TryExcise` that leaves no viral segment), infections blocked by immunity; reset by `EntityManager` at start, read by `SimulationLog` |
+| `VirologyEvents` | `Assets/Scripts/EntitySystem/Virology/VirologyEvents.cs` | Static counters of infections, recoveries and blocked infections; reset by `EntityManager`, read by `SimulationLog` |
 | `ProteinTable` | `Assets/Scripts/EntitySystem/Virology/ProteinTable.cs` | `ProteinAction` enum, `ProteinDescriptor`, energy cost |
 
+`EntityManager` resets the counters at start.
+An infection is a viral segment inserted by `TryInsertSegment`; a recovery is a `TryExcise` that leaves no viral segment.
 `VirologyComponent.cs` is over 500 lines: take the member's line from `docs/map/LARGE_FILES.md`.
 
 ## Data

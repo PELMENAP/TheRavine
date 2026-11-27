@@ -2,16 +2,16 @@ using UnityEngine;
 
 public sealed partial class SimulationRules
 {
-    [SerializeField] private bool stressSourcesEnabled;
-    [SerializeField] private bool socialReliefEnabled;
-    [SerializeField] private bool helpLogEnabled;
+    [SerializeField, FrameField] private bool stressSourcesEnabled;
+    [SerializeField, FrameField] private bool socialReliefEnabled;
+    [SerializeField, FrameField] private bool helpLogEnabled;
     [SerializeField] private bool taskBoardEnabled;
     [SerializeField] private bool depotsEnabled;
     [SerializeField] private bool trailsEnabled;
     [SerializeField] private bool huddlingEnabled;
     [SerializeField] private bool sheltersEnabled;
-    [SerializeField] private bool maskStressInput;
-    [SerializeField] private bool maskTaskSignal;
+    [SerializeField, FrameField] private bool maskStressInput;
+    [SerializeField, FrameField] private bool maskTaskSignal;
 
     [SerializeField] private float stressHighThreshold = 0.6f;
     [SerializeField] private float anomalyLoopWindow = 30f;

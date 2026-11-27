@@ -21,21 +21,23 @@ Key facts:
 
 ## Docs
 
-- [README](https://github.com/PELMENAP/TheRavine/blob/main/README.md): overview, stack, systems, document index
-- [Philosophy](https://github.com/PELMENAP/TheRavine/blob/main/PHILOSOPHY.md): what the world is and what it must not become
-- [Environment passport](https://github.com/PELMENAP/TheRavine/blob/main/.well-known/agent-card.json): machine-readable description of the environment and its interface status
-- [AI map](https://github.com/PELMENAP/TheRavine/blob/main/docs/map/ai.md): agents, colonies, shared brain, perception, learning
-- [Simulation log](https://github.com/PELMENAP/TheRavine/blob/main/docs/simulation_log.md): columns of the simulation CSV
-- [Architecture maps](https://github.com/PELMENAP/TheRavine/blob/main/docs/map/README.md): one map per subsystem
+- [Home](https://pelmenap.github.io/TheRavine/): landing page
+- [README](https://pelmenap.github.io/TheRavine/README.md): overview, stack, systems, document index
+- [Philosophy](https://pelmenap.github.io/TheRavine/PHILOSOPHY.md): what the world is and what it must not become
+- [Environment passport](https://pelmenap.github.io/TheRavine/.well-known/agent-card.json): machine-readable description of the environment and its interface status
+- [AI map](https://pelmenap.github.io/TheRavine/docs/map/ai.md): agents, colonies, shared brain, perception, learning
+- [Simulation log](https://pelmenap.github.io/TheRavine/docs/simulation_log.md): columns of the simulation CSV
+- [Architecture maps](https://pelmenap.github.io/TheRavine/docs/map/README.md): one map per subsystem
 
 ## Contributing with AI
 
-- [CLAUDE.md](https://github.com/PELMENAP/TheRavine/blob/main/CLAUDE.md): rules for AI contributors, routing table, constraints
-- [Hot paths](https://github.com/PELMENAP/TheRavine/blob/main/docs/map/HOT_PATHS.md): tick order and the zero-allocation rule
-- [Security](https://github.com/PELMENAP/TheRavine/blob/main/docs/SECURITY.md): server authority, RPC registry, Rive sandbox
+- [CLAUDE.md](https://pelmenap.github.io/TheRavine/CLAUDE.md): rules for AI contributors, routing table, constraints
+- [Hot paths](https://pelmenap.github.io/TheRavine/docs/map/HOT_PATHS.md): tick order and the zero-allocation rule
+- [Security](https://pelmenap.github.io/TheRavine/docs/SECURITY.md): server authority, RPC registry, Rive sandbox
+- [AGENTS.md](https://pelmenap.github.io/TheRavine/AGENTS.md): pointer to CLAUDE.md, the routing table to docs/map and the search rules
 
 ## Optional
 
-- [Optimization](https://github.com/PELMENAP/TheRavine/blob/main/docs/OPTIMIZATION.md): optimization principles and catalog
+- [Optimization](https://pelmenap.github.io/TheRavine/docs/OPTIMIZATION.md): optimization principles and catalog
 - [Source](https://github.com/PELMENAP/TheRavine/tree/main/Assets/Scripts): own C# code
 - [License](https://github.com/PELMENAP/TheRavine/blob/main/LICENSE): Apache-2.0
