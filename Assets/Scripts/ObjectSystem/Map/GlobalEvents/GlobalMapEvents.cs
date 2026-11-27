@@ -13,6 +13,7 @@ namespace TheRavine.Generator
         private static readonly int WinterApproachId = Shader.PropertyToID("_WinterApproach");
         private const double SeasonPublishInterval = 1d;
 
+        private readonly Camera[] _cameraBuffer = new Camera[8];
         private Camera _camera;
         private double _nextSeasonPublish;
         private bool _disposed;
@@ -68,8 +69,25 @@ namespace TheRavine.Generator
 
             PublishSeason();
 
-            if (_camera == null) _camera = Camera.main;
+            if (_camera == null) _camera = FindCamera();
             for (int i = 0; i < _count; i++) _events[i].Render(_camera);
+        }
+
+        private Camera FindCamera()
+        {
+            Camera main = Camera.main;
+            if (main != null) return main;
+
+            int n = Camera.GetAllCameras(_cameraBuffer);
+            Camera best = null;
+            for (int i = 0; i < n; i++)
+            {
+                Camera c = _cameraBuffer[i];
+                if (c == null || !c.isActiveAndEnabled || c.cameraType != CameraType.Game || c.targetTexture != null) continue;
+                if (best == null || c.depth > best.depth) best = c;
+            }
+            System.Array.Clear(_cameraBuffer, 0, n);
+            return best;
         }
 
         private void PublishSeason()

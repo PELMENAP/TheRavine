@@ -88,12 +88,10 @@ namespace TheRavine.Generator
         {
             if (weather == null || map == null || settings == null || !SystemInfo.supportsComputeShaders) return null;
 
-            Material drops = settings.rainMaterial;
-            Material shafts = settings.shaftMaterial;
-            Material ownedDrops = drops == null ? CreateMaterial(false) : null;
-            Material ownedShafts = shafts == null ? CreateMaterial(true) : null;
-            if (drops == null) drops = ownedDrops;
-            if (shafts == null) shafts = ownedShafts;
+            Material ownedDrops = CreateMaterial(settings.rainMaterial, false);
+            Material ownedShafts = CreateMaterial(settings.shaftMaterial, true);
+            Material drops = ownedDrops;
+            Material shafts = ownedShafts;
             if (drops == null || shafts == null)
             {
                 RavineLog.Warning("[WeatherView] Rain shader not found, weather is not rendered");
@@ -112,12 +110,22 @@ namespace TheRavine.Generator
             return new WeatherView(weather, map, settings, drops, shafts, cloud, ownedDrops, ownedShafts, ownedCloud);
         }
 
-        private static Material CreateMaterial(bool shaft)
+        private static Material CreateMaterial(Material source, bool shaft)
         {
-            Shader shader = Resources.Load<Shader>(RainShader);
-            if (shader == null || !shader.isSupported) return null;
-            var material = new Material(shader) { hideFlags = HideFlags.DontSave };
+            Material material;
+            if (source != null)
+            {
+                material = new Material(source) { hideFlags = HideFlags.DontSave };
+            }
+            else
+            {
+                Shader shader = Resources.Load<Shader>(RainShader);
+                if (shader == null || !shader.isSupported) return null;
+                material = new Material(shader) { hideFlags = HideFlags.DontSave };
+            }
+
             if (shaft) material.EnableKeyword(ShaftKeyword);
+            else material.DisableKeyword(ShaftKeyword);
             return material;
         }
 

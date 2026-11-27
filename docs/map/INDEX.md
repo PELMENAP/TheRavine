@@ -80,9 +80,9 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Model/InventoryModel` | 12 | 938 |
 | `Assets/Scripts/Model/InventoryModel/IInventory` | 3 | 28 |
 | `Assets/Scripts/ObjectSystem` | 2 | 196 |
-| `Assets/Scripts/ObjectSystem/Map/GlobalEvents` | 3 | 178 |
+| `Assets/Scripts/ObjectSystem/Map/GlobalEvents` | 3 | 196 |
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire` | 3 | 920 |
-| `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather` | 7 | 1515 |
+| `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather` | 7 | 1523 |
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Wind` | 5 | 790 |
 | `Assets/Scripts/ObjectSystem/Map/Tools` | 3 | 2970 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 23 | 4264 |
