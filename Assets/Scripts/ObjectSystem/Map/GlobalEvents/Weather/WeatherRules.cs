@@ -38,9 +38,13 @@ namespace TheRavine.Generator
         [Range(0f, 1f)] public float chargeMin = 0.2f;
         [Range(0f, 1f)] public float chargeMax = 1f;
         [Range(0f, 1f)] public float chargeHeatCorrelation = 0.8f;
-        [Min(10f)] public float cloudHeight = 250f;
         [Min(1f)] public float cloudSpread = 1.4f;
         [Range(0f, 1f)] public float cloudBase = 0.4f;
+
+        [Header("Cloud layer")]
+        [Tooltip("Cloud base elevation in world coordinates. Used by clouds, rain shafts and lightning.")]
+        public float cloudPlaneY = 650f;
+        [Range(0f, 1f)] public float fairWeatherCover = 0.36f;
 
         [Header("Ground")]
         [Min(0f)] public float virgaStrength = 0.8f;
@@ -80,7 +84,6 @@ namespace TheRavine.Generator
             inertiaSeconds = Mathf.Max(inertiaSeconds, 0.1f);
             moistureMax = Mathf.Max(moistureMax, moistureMin);
             chargeMax = Mathf.Max(chargeMax, chargeMin);
-            cloudHeight = Mathf.Max(cloudHeight, 10f);
             cloudSpread = Mathf.Max(cloudSpread, 1f);
             groundThreshold = Mathf.Max(groundThreshold, strikeThreshold);
             candidateSamples = Mathf.Max(candidateSamples, 1);

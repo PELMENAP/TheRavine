@@ -4,9 +4,8 @@ Shader "The Ravine/Weather/Cloud Layer"
     {
         [Header(Shape)]
         _Scale ("Noise Scale", Float) = 0.0016
-        _Scroll ("Scroll", Float) = 40
+        _Scroll ("Drift Speed", Float) = 4
         _Softness ("Edge Softness", Range(0.02, 0.5)) = 0.14
-        _BaseCover ("Fair Weather Cover", Range(0, 1)) = 0
         _Opacity ("Opacity", Range(0, 1)) = 0.92
 
         [Header(Light)]
@@ -52,7 +51,6 @@ Shader "The Ravine/Weather/Cloud Layer"
                 float  _Scale;
                 float  _Scroll;
                 float  _Softness;
-                float  _BaseCover;
                 float  _Opacity;
                 float4 _CloudColor;
                 float4 _StormColor;
@@ -92,7 +90,7 @@ Shader "The Ravine/Weather/Cloud Layer"
 
             float CloudDensity(float2 xz, float2 drift, float detail)
             {
-                float cover = saturate(SampleWeather(float3(xz.x, 0.0, xz.y)).cloud + _BaseCover);
+                float cover = saturate(SampleWeather(float3(xz.x, 0.0, xz.y)).cloud + _CloudPlane.w);
                 if (cover <= 0.004) return 0.0;
 
                 float n = CloudNoise((xz + drift) * _Scale, detail);
@@ -107,7 +105,7 @@ Shader "The Ravine/Weather/Cloud Layer"
                 float fade = 1.0 - smoothstep(0.55, 1.0, distanceXZ / max(_CloudPlane.x, 1.0));
                 if (fade <= 0.002) discard;
 
-                float2 drift = _WeatherWind.xy * (_Scroll * _CloudPlane.z);
+                float2 drift = float2(0.8, 0.6) * (_Scroll * _CloudPlane.z);
                 float density = CloudDensity(xz, drift, 1.0);
                 if (density <= 0.004) discard;
 

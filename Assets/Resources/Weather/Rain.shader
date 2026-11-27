@@ -156,6 +156,7 @@ Shader "The Ravine/Weather/Rain"
                 float3 rel = (frac((p - camera) / box + 0.5) - 0.5) * box;
                 float3 positionWS = camera + rel;
 
+                if (positionWS.y >= _WeatherShadow.y) return Culled();
                 float rain = SampleWeather(positionWS).rain;
                 if (keep > rain * _Density) return Culled();
 

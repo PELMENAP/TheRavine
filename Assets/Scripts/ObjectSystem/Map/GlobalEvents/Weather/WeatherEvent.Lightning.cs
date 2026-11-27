@@ -92,9 +92,9 @@ namespace TheRavine.Generator
             float2 around = _position[cell] + RandomDisk() * (_radius[cell] * _rules.strikeSpread);
             bool hasGround = _map.TrySampleHeightBilinear(around.x, around.y, out float groundY);
 
-            if (charge < _rules.groundThreshold)
+            if (charge < _rules.groundThreshold || (hasGround && groundY >= _rules.cloudPlaneY))
             {
-                Record(new float3(around.x, (hasGround ? groundY : 0f) + _rules.cloudHeight, around.y), charge, false);
+                Record(new float3(around.x, _rules.cloudPlaneY, around.y), charge, false);
                 return;
             }
             if (!hasGround) return;
@@ -113,7 +113,7 @@ namespace TheRavine.Generator
                 if (fire == null || _map.Commands.HasPendingRemove(packed) || !_map.TryGetObject(packed, out ObjectInstInfo inst)) continue;
 
                 float size = fire.SizeOf(inst.PrefabID);
-                if (size <= bestSize) continue;
+                if (size <= bestSize || inst.Position.y + size >= _rules.cloudPlaneY) continue;
                 bestSize = size;
                 bestPoint = new float3(inst.Position.x, inst.Position.y + size, inst.Position.z);
                 bestCell = Position2Int.Pack(cx, cz);

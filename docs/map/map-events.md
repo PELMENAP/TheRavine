@@ -100,8 +100,11 @@ Tests: `Assets/Tests/EditMode/FireMathTests.cs`, `Assets/Tests/EditMode/WildWind
 - Globals `_WeatherWind` and `_WeatherShadow`; the shader side is `Assets/Shaders/Effects/WeatherCommon.hlsl`.
 - `Assets/Resources/Weather/Rain.shader`: mesh-less drops wrapped in a box around the camera; a drop is kept by the local rain.
 - A second material with keyword `RAIN_SHAFT` draws one camera-facing shaft per cell; its bottom is lifted by the evaporation share.
-- `Assets/Resources/Weather/CloudLayer.shader`: one plane at cloud height following the camera; cover is the map cloud channel times noise.
+- `Assets/Resources/Weather/CloudLayer.shader` draws a plane at Cloud Plane Y. Rain shafts and lightning use the same world elevation.
+- The draw area follows the camera horizontally, while cloud density samples world coordinates. Fair Weather Cover adds baseline cloud cover when the weather map is empty.
 - The cloud layer takes five parallax steps toward the sun and gets a darker base under high charge.
+- Rain and Shaft use the same shader with separate material settings. A blank Shaft field uses the Rain material as its source.
+- In the Editor, changes to the source materials reach their render copies during Play Mode.
 - `LightningView` builds each bolt on the CPU (midpoint displacement, 2 to 3 branches, fixed segment budget) into one `GraphicsBuffer`.
 - `Assets/Resources/Weather/Lightning.shader` draws the bolt as ribbons with return strokes; one pooled point light follows the strokes.
 - `_LightningFlash` is read by the rain, cloud and sky (`Assets/Shaders/Skybox/Skybox.shader`) shaders.

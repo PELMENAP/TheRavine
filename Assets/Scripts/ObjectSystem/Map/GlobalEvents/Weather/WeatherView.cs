@@ -14,7 +14,9 @@ namespace TheRavine.Generator
     public sealed class WeatherViewSettings
     {
         public bool enabled = true;
+        [Tooltip("Material for nearby drops. Edit Drops and Light on this material.")]
         public Material rainMaterial;
+        [Tooltip("Material for distant rain shafts. Edit Shafts and Light on this material. Falls back to Rain Material.")]
         public Material shaftMaterial;
         public Material cloudMaterial;
         [Min(0)] public int dropCount = 12000;
@@ -83,13 +85,17 @@ namespace TheRavine.Generator
         private int _version = -1;
         private float2 _wind;
         private bool _disposed;
+#if UNITY_EDITOR
+        private int _rainMaterialDirty = -1;
+        private int _shaftMaterialDirty = -1;
+#endif
 
         public static WeatherView TryCreate(WeatherEvent weather, MapGenerator map, WeatherViewSettings settings)
         {
             if (weather == null || map == null || settings == null || !SystemInfo.supportsComputeShaders) return null;
 
             Material ownedDrops = CreateMaterial(settings.rainMaterial, false);
-            Material ownedShafts = CreateMaterial(settings.shaftMaterial, true);
+            Material ownedShafts = CreateMaterial(settings.shaftMaterial != null ? settings.shaftMaterial : settings.rainMaterial, true);
             Material drops = ownedDrops;
             Material shafts = ownedShafts;
             if (drops == null || shafts == null)
@@ -124,10 +130,29 @@ namespace TheRavine.Generator
                 material = new Material(shader) { hideFlags = HideFlags.DontSave };
             }
 
-            if (shaft) material.EnableKeyword(ShaftKeyword);
-            else material.DisableKeyword(ShaftKeyword);
+            SetRainVariant(material, shaft);
             return material;
         }
+
+        private static void SetRainVariant(Material material, bool shaft)
+        {
+            if (shaft) material.EnableKeyword(ShaftKeyword);
+            else material.DisableKeyword(ShaftKeyword);
+        }
+
+#if UNITY_EDITOR
+        private static void RefreshMaterial(Material source, Material target, bool shaft, ref int dirtyCount)
+        {
+            if (source == null) return;
+            int current = UnityEditor.EditorUtility.GetDirtyCount(source);
+            if (current == dirtyCount) return;
+
+            target.shader = source.shader;
+            target.CopyPropertiesFromMaterial(source);
+            SetRainVariant(target, shaft);
+            dirtyCount = current;
+        }
+#endif
 
         private static void DestroyMaterial(Material material)
         {
@@ -168,7 +193,6 @@ namespace TheRavine.Generator
                 _cloudParams = CreateParams(cloud, _cloudProps);
                 _hasCloud = true;
             }
-            Shader.SetGlobalVector(ShadowId, new Vector4(settings.cloudShadow, weather.Rules.cloudHeight, 0f, 0f));
             _lightning = LightningView.TryCreate(weather, settings.lightning);
         }
 
@@ -187,14 +211,20 @@ namespace TheRavine.Generator
 
             using (RenderMarker.Auto())
             {
+#if UNITY_EDITOR
+                RefreshMaterial(_settings.rainMaterial, _ownedDrops, false, ref _rainMaterialDirty);
+                RefreshMaterial(_settings.shaftMaterial != null ? _settings.shaftMaterial : _settings.rainMaterial,
+                    _ownedShafts, true, ref _shaftMaterialDirty);
+#endif
                 float3 eye = camera.transform.position;
+                Shader.SetGlobalVector(ShadowId, new Vector4(_settings.cloudShadow, _weather.Rules.cloudPlaneY, 0f, 0f));
                 if (_weather.Version != _version)
                 {
                     _version = _weather.Version;
                     using (UploadMarker.Auto())
                     {
                         UploadMap();
-                        RebuildShafts(eye.y);
+                        RebuildShafts();
                     }
                 }
 
@@ -205,7 +235,7 @@ namespace TheRavine.Generator
                 _dropProps.SetFloat(RainTimeId, time);
                 _shaftProps.SetFloat(RainTimeId, time);
 
-                DrawClouds(camera, eye, time);
+                DrawClouds(camera, eye, (float)SimulationClock.TimeD);
                 DrawDrops(eye);
                 DrawShafts();
             }
@@ -233,7 +263,7 @@ namespace TheRavine.Generator
             Shader.SetGlobalVector(RectId, new Vector4(origin.x * texel, origin.y * texel, texel, _weather.Side));
         }
 
-        private void RebuildShafts(float fallbackY)
+        private void RebuildShafts()
         {
             WeatherRules rules = _weather.Rules;
             float3 min = new(float.MaxValue);
@@ -248,10 +278,11 @@ namespace TheRavine.Generator
 
                 float2 at = _weather.CellPosition(i);
                 float radius = _weather.CellRadius(i);
-                float ground = _map.TrySampleHeightBilinear(at.x, at.y, out float h) ? h : fallbackY - 2f;
-                float top = ground + rules.cloudHeight;
+                if (!_map.TrySampleHeightBilinear(at.x, at.y, out float ground)) continue;
+                float top = rules.cloudPlaneY;
+                if (ground >= top) continue;
                 float evaporation = _weather.CellEvaporation(i);
-                float bottom = ground + evaporation * rules.cloudHeight * 0.92f;
+                float bottom = ground + evaporation * (top - ground) * 0.92f;
                 float seed = (math.hash(new int2((int)at.x, (int)at.y)) & 0xFFFF) * (1f / 65535f);
 
                 _shafts[n++] = new ShaftInstance
@@ -272,11 +303,13 @@ namespace TheRavine.Generator
 
         private void DrawClouds(Camera camera, float3 eye, float time)
         {
-            if (!_hasCloud || !_cloudPresent) return;
+            var rules = _weather.Rules;
+            if (!_hasCloud || (!_cloudPresent && rules.fairWeatherCover <= 0f)) return;
 
             float extent = math.min(_settings.cloudExtent, camera.farClipPlane * 0.9f);
-            float y = eye.y + _weather.Rules.cloudHeight;
-            _cloudProps.SetVector(CloudPlaneId, new Vector4(extent, y, time, 0f));
+            float y = rules.cloudPlaneY;
+            if (math.abs(y - eye.y) >= camera.farClipPlane) return;
+            _cloudProps.SetVector(CloudPlaneId, new Vector4(extent, y, time, rules.fairWeatherCover));
             _cloudParams.worldBounds = new Bounds(new Vector3(eye.x, y, eye.z), new Vector3(extent * 2f, 16f, extent * 2f));
             Graphics.RenderPrimitives(in _cloudParams, MeshTopology.Triangles, 6, 1);
         }
@@ -303,7 +336,7 @@ namespace TheRavine.Generator
         private void DrawDrops(float3 eye)
         {
             int count = _settings.dropCount;
-            if (count <= 0 || !RainNear(eye)) return;
+            if (count <= 0 || eye.y - _box.y * 0.5f >= _weather.Rules.cloudPlaneY || !RainNear(eye)) return;
 
             _dropProps.SetVector(RainBoxId, new Vector4(_box.x, _box.y, _box.z, 0f));
             _dropParams.worldBounds = new Bounds(eye, new Vector3(_box.x, _box.y, _box.z) * 2f);

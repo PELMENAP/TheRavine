@@ -51,7 +51,8 @@ WeatherSample SampleWeather(float3 positionWS)
 float WeatherCloudShade(float3 positionWS)
 {
     float3 toSun = _MainLightPosition.xyz;
-    float2 shift = toSun.xz / max(toSun.y, 0.15) * _WeatherShadow.y;
+    float height = max(_WeatherShadow.y - positionWS.y, 0.0);
+    float2 shift = toSun.xz / max(toSun.y, 0.15) * height;
     float cloud = SampleWeather(float3(positionWS.x + shift.x, positionWS.y, positionWS.z + shift.y)).cloud;
     return 1.0 - saturate(cloud * _WeatherShadow.x);
 }

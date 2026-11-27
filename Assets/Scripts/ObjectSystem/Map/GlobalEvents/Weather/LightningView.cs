@@ -193,13 +193,16 @@ namespace TheRavine.Generator
 
         private void AddBolt(in WeatherStrike strike, float now)
         {
+            float3 bottom = strike.Position;
+            float height = _weather.Rules.cloudPlaneY - bottom.y;
+            if (height <= 0f) return;
+
             int slot = _boltHead;
             _boltHead = (_boltHead + 1) % _boltBirth.Length;
-
             float seed = RavineRandom.RangeFloat();
-            float height = _weather.Rules.cloudHeight;
-            float3 bottom = strike.Position;
-            float3 top = bottom + new float3(RavineRandom.RangeFloat(-0.3f, 0.3f) * height, height, RavineRandom.RangeFloat(-0.3f, 0.3f) * height);
+            float offset = math.min(height * 0.3f, _weather.Rules.strikeRadius);
+            float3 top = new float3(bottom.x + RavineRandom.RangeFloat(-offset, offset), _weather.Rules.cloudPlaneY,
+                bottom.z + RavineRandom.RangeFloat(-offset, offset));
 
             _main[0] = top;
             _main[1] = bottom;
