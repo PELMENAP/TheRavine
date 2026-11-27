@@ -10,8 +10,7 @@ public class ColonyCanvasTests
     [SetUp]
     public void SetUp()
     {
-        _rules = ScriptableObject.CreateInstance<SimulationRules>();
-        SimulationRules.Bind(_rules);
+        _rules = TestRules.Bind();
         _registry = new ColonyRegistry();
     }
 
@@ -19,7 +18,7 @@ public class ColonyCanvasTests
     public void TearDown()
     {
         _registry.Dispose();
-        Object.DestroyImmediate(_rules);
+        TestRules.Release(_rules);
     }
 
     private ColonyState NewColony(int x, int memberIndex)
@@ -68,6 +67,8 @@ public class ColonyCanvasTests
         var b = new float[] { 5f, 0f, 5f, 0f };
         Assert.AreEqual(0.5f, JensenShannon.Conditional(a, b, 2, 2), 1e-6f);
         Assert.AreEqual(0f, JensenShannon.Conditional(a, a, 2, 2), 1e-6f);
+        Assert.IsTrue(float.IsNaN(JensenShannon.Conditional(
+            new float[] { 5f, 0f, 0f, 0f }, new float[] { 0f, 0f, 5f, 0f }, 2, 2)));
     }
 
     [Test]
@@ -81,7 +82,7 @@ public class ColonyCanvasTests
         for (int sample = 1; sample <= 3; sample++)
         {
             Behave(a, new[] { 1, 3, 1, 3, 6 }, 2, 20);
-            Behave(b, new[] { 2, 5, 2, 7, 9 }, 1, 20);
+            Behave(b, new[] { 2, 1, 2, 7, 9 }, 1, 20);
             canvas.Update(10f * sample, _registry, null, "test");
         }
 

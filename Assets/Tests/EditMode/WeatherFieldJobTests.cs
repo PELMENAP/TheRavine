@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Mathematics;
+using Unity.Jobs;
 using TheRavine.Generator;
 
 public class WeatherFieldJobTests
@@ -188,7 +189,7 @@ public class WeatherFieldJobTests
         {
             sink += WeatherMath.Falloff(10f, 100f) + WeatherMath.Envelope(30f, 100f)
                   + WeatherMath.GroundRain(0.5f, 0.5f, 0.5f, r.virgaStrength)
-                  + WeatherMath.Pressure(10f, 100f, 5f) + math.length(WeatherMath.GustFront(new float2(50f, 20f), 100f, 1f))
+                  + math.abs(WeatherMath.Pressure(10f, 100f, 5f)) + math.length(WeatherMath.GustFront(new float2(50f, 20f), 100f, 1f))
                   + WeatherMath.WetnessStep(0.2f, 0.5f, 0.5f, 0.1f, 0.5f, r.wetnessGain, r.wetnessDryPerSecond, r.wetnessDryHeat, r.wetnessDryWind)
                   + WeatherMath.StrikeRate(0.8f, r.strikeThreshold, r.strikesPerSecond)
                   + WeatherMath.StrokeIntensity(0.1f, 0.3f, 0.3f);

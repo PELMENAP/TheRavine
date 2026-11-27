@@ -218,9 +218,16 @@ public class RulesDefaultsTests
     {
         var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<SimulationRules>("Assets/Scripts/EntitySystem/AI/SimulationRules.asset");
         Assert.IsNotNull(asset);
-        Assert.IsFalse(asset.StressSourcesEnabled || asset.SocialReliefEnabled || asset.HelpLogEnabled || asset.TaskBoardEnabled);
-        Assert.IsFalse(asset.DepotsEnabled || asset.TrailsEnabled || asset.HuddlingEnabled || asset.SheltersEnabled);
-        Assert.IsFalse(asset.MaskStressInput || asset.MaskTaskSignal);
+        Assert.IsFalse(asset.StressSourcesEnabled, nameof(asset.StressSourcesEnabled));
+        Assert.IsFalse(asset.SocialReliefEnabled, nameof(asset.SocialReliefEnabled));
+        Assert.IsFalse(asset.HelpLogEnabled, nameof(asset.HelpLogEnabled));
+        Assert.IsFalse(asset.TaskBoardEnabled, nameof(asset.TaskBoardEnabled));
+        Assert.IsFalse(asset.DepotsEnabled, nameof(asset.DepotsEnabled));
+        Assert.IsFalse(asset.TrailsEnabled, nameof(asset.TrailsEnabled));
+        Assert.IsFalse(asset.HuddlingEnabled, nameof(asset.HuddlingEnabled));
+        Assert.IsFalse(asset.SheltersEnabled, nameof(asset.SheltersEnabled));
+        Assert.IsFalse(asset.MaskStressInput, nameof(asset.MaskStressInput));
+        Assert.IsFalse(asset.MaskTaskSignal, nameof(asset.MaskTaskSignal));
     }
 
     [Test]

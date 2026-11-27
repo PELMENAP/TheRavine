@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using NUnit.Framework;
 using Unity.Mathematics;
 using UnityEngine;
@@ -172,16 +173,32 @@ public class LtcNeuronTests
             Assert.AreEqual(BitConverter.SingleToInt32Bits(A), BitConverter.SingleToInt32Bits(stored));
 
             float dH    = (float)(rng.NextDouble() * 2.0 - 1.0);
-            float dPreFOld = dH * (dt / A) * (1f - f * f);
-            float dTauOld  = dH * hOld * dt / (A * tauOld * tauOld);
-            float dPreTOld = dTauOld * (1f - math.exp(-tauOld));
-            LtcNeuron.Backward(dH, h, f, tau, stored, dt, false, DelayedPerceptron.TauEpsilon, float.MaxValue,
+            LegacyBackwardReference(dH, h, f, tauOld, A, dt, out float dPreFOld, out float dPreTOld, out float dHBeforeOld);
+            LegacyBackward(dH, h, f, tau, stored, dt,
                 out float dPreF, out float dPreT, out float dHBefore);
             Assert.AreEqual(BitConverter.SingleToInt32Bits(dPreFOld), BitConverter.SingleToInt32Bits(dPreF));
             Assert.AreEqual(BitConverter.SingleToInt32Bits(dPreTOld), BitConverter.SingleToInt32Bits(dPreT));
-            Assert.AreEqual(BitConverter.SingleToInt32Bits(dH / A), BitConverter.SingleToInt32Bits(dHBefore));
+            Assert.AreEqual(BitConverter.SingleToInt32Bits(dHBeforeOld), BitConverter.SingleToInt32Bits(dHBefore));
         }
     }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void LegacyBackwardReference(float dH, float hBefore, float f, float tau, float a, float dt,
+        out float dPreF, out float dPreT, out float dHBefore)
+    {
+        float taun = math.max(tau, DelayedPerceptron.TauEpsilon);
+        dPreF = dH * (dt / a) * (1f - f * f);
+        float hNew = (hBefore + dt * f) / a;
+        float dTau = dH * hNew * dt / (a * taun * taun);
+        dPreT = dTau * (1f - math.exp(-taun));
+        dHBefore = dH / a;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void LegacyBackward(float dH, float hBefore, float f, float tau, float a, float dt,
+        out float dPreF, out float dPreT, out float dHBefore)
+        => LtcNeuron.Backward(dH, hBefore, f, tau, a, dt, false, DelayedPerceptron.TauEpsilon, float.MaxValue,
+            out dPreF, out dPreT, out dHBefore);
 
     [Test]
     public void BoundedStateStaysInUnitInterval()

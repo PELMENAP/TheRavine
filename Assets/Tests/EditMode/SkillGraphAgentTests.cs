@@ -46,7 +46,8 @@ public class SkillGraphAgentTests
         Assert.AreEqual(1f, g.PlastStruct);
         Assert.AreEqual(1f, g.PlastExplore);
         Assert.AreEqual(1f, g.PlastNeed);
-        Assert.AreEqual(GeneticParameters.IdxPlastNeed + 1, GeneticParameters.GeneCount);
+        Assert.AreEqual(GeneticParameters.IdxPlastNeed + 1, GeneticParameters.IdxPredisposition0);
+        Assert.AreEqual(GeneticParameters.IdxPredisposition0 + GeneticParameters.PredispositionCount, GeneticParameters.GeneCount);
         Assert.AreEqual(GeneticParameters.GeneCount, GeneticParameters.ParameterRanges.Length);
 
         var origin = GeneticParameters.ParameterRanges[GeneticParameters.IdxSkillOriginX];
