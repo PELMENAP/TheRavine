@@ -21,7 +21,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 9. Fourth loop: `EntityModel.EndCycle` (the view is notified only while the agent is visible).
 10. `MovePlanner.Flush`, then `InfectionCoordinator.Spread` on the batch.
 11. At the end of a window, `CloseTickWindow`: deaths, extinctions, predators, `ApplyPendingGradients`, nests, castes, `SweepSkills`, `SolveSkills`, visibility.
-12. Every frame after the tick: `EntityManager.ApplyFireHeat` (once per fire step), `EntityManager.ApplyWildWind` (once per wind step while active), `SpeechBus.Flush`, `MovePlanner.Flush`, `MotionSystem.Step`, `StampAgents`, `AgentSnapshotStream.Tick`.
+12. Every frame after the tick: `EntityManager.ApplyFireHeat` (once per fire step), `EntityManager.ApplyWildWind` (once per wind step while active), `EntityManager.StepBiosphere` (after `ColonyFood.Tick`, not per agent), `SpeechBus.Flush`, `MovePlanner.Flush`, `MotionSystem.Step`, `StampAgents`, `AgentSnapshotStream.Tick`.
 
 | Area | File | Hot methods |
 |---|---|---|
@@ -32,6 +32,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 | Plans | `Assets/Scripts/EntitySystem/AI/Plans/PlanRunner.cs` | `Tick`, `Advance`, `ResolveDestination` |
 | Vectorisation | `Assets/Scripts/EntitySystem/AI/InputVectorizer.cs` | whole file |
 | Metabolism | `Assets/Scripts/EntitySystem/AI/Entity/CreatureCore.cs` | `Metabolize`, `StepVirology`, `ReadVitals` |
+| Knowledge | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Knowledge.cs`, `Assets/Scripts/EntitySystem/AI/Knowledge/KnowledgeSystem.cs` | `StepKnowledge`, `Observe`, `Search`, `Teach`, `KnowledgeMath.Evaluate` |
 | Virology | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs`, `Assets/Scripts/EntitySystem/Virology/Ribosome.cs` | `VirologyComponent.Step`, `Ribosome.Step`, `Relax` |
 | Infection | `Assets/Scripts/EntitySystem/Virology/InfectionService.cs`, `Assets/Scripts/EntitySystem/Virology/VirologyEvents.cs` | `ProcessSpread` and the `TryTransmit` family; `VirologyEvents.Note*` (integer increments) |
 
@@ -49,7 +50,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 
 | Area | File | Hot methods |
 |---|---|---|
-| Neighbours | `Assets/Scripts/EntitySystem/AI/Perception/EntitySpatialGrid.cs` | `Rebuild`, `NoteDeath`, `NoteHp`, `FindNearest`, `FindInRadius` (`Survey` is the reference) |
+| Neighbours | `Assets/Scripts/EntitySystem/AI/Perception/EntitySpatialGrid.cs` | `Rebuild`, `NoteDeath`, `NoteHp`, `FindNearest`, `FindInRadius`, `CountAlarmed` (`Survey` is the reference) |
 | Survey | `Assets/Scripts/EntitySystem/AI/Perception/SurveySystem.cs` | `Write`, `Schedule`, `Output`, `SurveyJob` |
 | Food | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | `TryFindNearestFood`, `TryLocate`, `TryClaim`, `BiteMeat`, `TryTakePayload` |
 | Terrain | `Assets/Scripts/EntitySystem/AI/Perception/TerrainSensor.cs`, `Assets/Scripts/EntitySystem/AI/Perception/TerrainSteering.cs` | whole files |

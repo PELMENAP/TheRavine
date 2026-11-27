@@ -10,6 +10,8 @@ One map per subsystem. Open only the map of the area the task touches; the routi
 | `docs/map/ai.md` | Agents, colonies, shared brain, learning, perception, speech, debug |
 | `docs/map/codex.md` | Laws over rule axes: price-bounded admissibility, support, aggregation, colony legislator |
 | `docs/map/virology.md` | Genome tape, ribosome, strains, infection |
+| `docs/map/biosphere.md` | Chemistry of four elements, cellular organisms with a regulatory genome |
+| `docs/map/lineage-knowledge.md` | Two-parent lineage, compatibility loci, per-agent knowledge expressions |
 | `docs/map/world.md` | Chunks, terrain, objects, random ticks, NAL, camera rings, rendering |
 | `docs/map/ravine.md` | Ravine profile: elevation by world z, wall, plateau generator, relative water |
 | `docs/map/landforms.md` | Landform layer: local terrain, river and erosion rules from blended presets |

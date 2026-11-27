@@ -39,6 +39,10 @@ public static class CreatureCore
     public static float LonelyStressRate(float aloneSeconds, in SimulationRules.RulesFrame r)
         => r.StressSourcesEnabled && aloneSeconds > r.LonelinessWindow ? r.StressLonelyRate : 0f;
 
+    public static float ContagionStressRate(int alarmed, int near, in SimulationRules.RulesFrame r)
+        => r.StressSourcesEnabled && r.StressContagionEnabled && near > 0
+            ? r.StressContagionRate * math.saturate((float)alarmed / near) : 0f;
+
     public static float StepAloneSeconds(float aloneSeconds, bool hasKin, float dt)
         => hasKin ? 0f : aloneSeconds + dt;
 

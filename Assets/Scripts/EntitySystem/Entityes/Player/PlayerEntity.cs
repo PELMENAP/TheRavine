@@ -21,6 +21,8 @@ namespace TheRavine.EntityControl
         private MapGenerator map;
         private float immuneUpkeepMul = 1f;
         private PlayerSkillGraph skills;
+        private readonly PlayerStress stress = new();
+        private EntitySpatialGrid grid;
         private float baseMaxHealth;
         private float baseMaxEnergy;
         private double lastCycleTime;
@@ -133,7 +135,9 @@ namespace TheRavine.EntityControl
             CreatureCore.StepVirology(virology, stats, mortality, dt, in host);
             ref var mods = ref virology.Modifiers;
 
-            float basalMul = CreatureCore.EnvironmentDrainMul(0f, night, mods.Fever, winter, in rules) * immuneUpkeepMul;
+            float environmentMul = CreatureCore.EnvironmentDrainMul(0f, night, mods.Fever, winter, in rules);
+            StepStress(dt, environmentMul, night || winter, in rules);
+            float basalMul = environmentMul * CreatureCore.StressDrainMul(stress.Effect, in rules) * immuneUpkeepMul;
             CreatureCore.Metabolize(stats, mortality, dt, 0f, mods.MetabolismMultiplier, basalMul,
                 in rules, out float metabolismCredit);
             virology.CreditDurableEffects(0f, metabolismCredit, stats.MaxEnergy);
@@ -152,6 +156,18 @@ namespace TheRavine.EntityControl
             stats.Commit();
             energy.Sync();
         }
+
+        private void StepStress(float dt, float environmentMul, bool exposed, in SimulationRules.RulesFrame rules)
+        {
+            int alarmed = 0, near = 0;
+            if (rules.StressSourcesEnabled && rules.PlayerStressEnabled && rules.StressContagionEnabled && transformComponent != null
+                && (grid != null || ServiceLocator.Services.TryGet(out grid)))
+                alarmed = grid.CountAlarmed(transformComponent.GetEntityPosition(), rules.StressContagionRadius, out near);
+            float energyFraction = stats.MaxEnergy > 0f ? stats.En / stats.MaxEnergy : 1f;
+            stress.Step(dt, energyFraction, environmentMul, exposed, alarmed, near, in rules);
+        }
+
+        public PlayerStress Stress => stress;
 
         private void RefreshSkillEffects()
         {

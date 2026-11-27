@@ -14,7 +14,9 @@ namespace TheRavine.Base
         private const int AgentBytesV2 = AgentBytesV1 + StressBytes;
         private const int HelpEntryBytes = sizeof(int) + 7 * sizeof(float);
         private const int AgentBytesV3Min = AgentBytesV2 + sizeof(byte);
-        private const int AgentBytes = AgentBytesV3Min + MaxHelpEntries * HelpEntryBytes;
+        private const int LineageBytes = sizeof(int) + sizeof(uint);
+        private const int AgentBytesV4Min = AgentBytesV3Min + LineageBytes;
+        private const int AgentBytes = AgentBytesV4Min + MaxHelpEntries * HelpEntryBytes;
 
         private static string FilePath(string world)
         {
@@ -50,7 +52,7 @@ namespace TheRavine.Base
             Require(r.ReadUInt32() == Magic, "unknown format or version");
             int version = r.ReadInt32();
             Require(version >= MinVersion && version <= Version, "unknown format or version");
-            int agentBytes = version >= 3 ? AgentBytesV3Min : version >= 2 ? AgentBytesV2 : AgentBytesV1;
+            int agentBytes = version >= 4 ? AgentBytesV4Min : version >= 3 ? AgentBytesV3Min : version >= 2 ? AgentBytesV2 : AgentBytesV1;
             var s = new PopulationSnapshot
             {
                 Seed = r.ReadInt32(), WorldCreated = r.ReadInt64(), Captured = r.ReadInt64(),
@@ -106,6 +108,11 @@ namespace TheRavine.Base
                             BalanceAge = r.ReadSingle(), ComfortAge = r.ReadSingle(), GaveAge = r.ReadSingle(),
                             ReceivedAge = r.ReadSingle(), MetAge = r.ReadSingle()
                         };
+                }
+                if (version >= 4)
+                {
+                    a.Mate = r.ReadInt32();
+                    a.MateLoci = r.ReadUInt32();
                 }
                 a.Genes = new float[GeneCount];
                 for (int g = 0; g < GeneCount; g++) a.Genes[g] = r.ReadSingle();
@@ -184,6 +191,8 @@ namespace TheRavine.Base
                     w.Write(e.ReceivedAge);
                     w.Write(e.MetAge);
                 }
+                w.Write(a.Mate);
+                w.Write(a.MateLoci);
                 foreach (float gene in a.Genes) w.Write(gene);
             }
         }

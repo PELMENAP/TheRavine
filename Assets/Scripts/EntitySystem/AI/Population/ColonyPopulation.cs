@@ -36,8 +36,10 @@ public sealed class ColonyPopulation
     private readonly NoveltyProgressSystem  _novelty;
     private readonly HelpLog _helpLog;
     private readonly BehaviourMotifLog _motifs;
+    private readonly KnowledgeSystem _knowledge;
 
     public LifeEventLog LifeLog { get; set; }
+    public LineageStore Lineage { get; } = new(SimulationRules.Active.LineageCapacity);
 
     private readonly Queue<EntityModel> _pendingDeath = new();
     private EntityModel[] _deferredDispose = Array.Empty<EntityModel>();
@@ -68,7 +70,8 @@ public sealed class ColonyPopulation
         List<EntityModel> entities, ColonyRegistry colonies, ColonyState wild, ColonyFood food, EvolutionService evolution,
         EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, SurveySystem survey, UtilityPriorSystem utility,
         CasteThresholdSystem thresholds, SkillGraphStore skills, BoidSystem boids, EnergyLedger ledger, SpeechBus speech, bool spawnNetworkObjects,
-        BehaviourDescriptorLog descriptors = null, NoveltyProgressSystem novelty = null, HelpLog helpLog = null, BehaviourMotifLog motifs = null)
+        BehaviourDescriptorLog descriptors = null, NoveltyProgressSystem novelty = null, HelpLog helpLog = null, BehaviourMotifLog motifs = null,
+        KnowledgeSystem knowledge = null)
     {
         _spawnNetworkObjects = spawnNetworkObjects;
         _prefab        = prefab;
@@ -96,12 +99,13 @@ public sealed class ColonyPopulation
         _novelty       = novelty;
         _helpLog       = helpLog;
         _motifs        = motifs;
+        _knowledge     = knowledge;
     }
 
     public void StartPredatorClock(double now) => _nextPredatorTime = now;
 
     public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null, EntityModel mate = null, float2? birthVitals = null,
-        TheRavine.Base.PopulationSnapshot.Agent? saved = null)
+        TheRavine.Base.PopulationSnapshot.Agent? saved = null, uint mateLoci = 0u)
     {
         if (!TheRavine.Base.WorldAuthority.IsAuthority || !HasFreeSlot(colony) ||
             (parent != null && !birthVitals.HasValue && SimulationRules.Active.ReproductionTransferEnabled))
@@ -116,7 +120,7 @@ public sealed class ColonyPopulation
         try
         {
             go = UnityEngine.Object.Instantiate(_prefab, position, Quaternion.identity, _parent);
-            RegisterEntity(go, model, position, colony, ctx, parent, mate, birthVitals, saved);
+            RegisterEntity(go, model, position, colony, ctx, parent, mate, birthVitals, saved, mateLoci);
             return model;
         }
         catch
@@ -130,7 +134,7 @@ public sealed class ColonyPopulation
     }
 
     private void RegisterEntity(GameObject go, EntityModel model, Vector3 position, ColonyState colony, EntityBrainContext ctx,
-        EntityModel parent, EntityModel mate, float2? birthVitals, TheRavine.Base.PopulationSnapshot.Agent? saved)
+        EntityModel parent, EntityModel mate, float2? birthVitals, TheRavine.Base.PopulationSnapshot.Agent? saved, uint mateLoci)
     {
         foreach (var expressible in go.GetComponents<IGeneticPhenotype>())
             expressible.ApplyGeneticPhenotype(ctx.CoordMLP.Params);
@@ -147,6 +151,7 @@ public sealed class ColonyPopulation
         model.AssignId(saved?.Id ?? ++_nextEntityId);
 
         model.Configure(colony, ctx, viewModel, viewModel, go, _tuning, parent);
+        model.SetLineage(saved?.Mate ?? mate?.EntityId ?? 0, saved?.MateLoci ?? mateLoci);
         if (birthVitals.HasValue)
         {
             model.Stats.En = birthVitals.Value.x;
@@ -201,7 +206,10 @@ public sealed class ColonyPopulation
         _motifs?.Reset(model.ManagerIndex);
         _novelty?.Reset(model.ManagerIndex);
         _helpLog?.Reset(model.ManagerIndex);
+        _knowledge?.Reset(model.ManagerIndex);
         if (saved.HasValue) model.RestoreHelp(saved.Value);
+        Lineage.Birth(model.EntityId, saved?.Parent ?? parent?.EntityId ?? 0, model.MateId,
+            SimulationClock.Time - (saved?.Age ?? 0f), model.MateLoci);
         if (!saved.HasValue)
         {
             LifeLog?.Birth(model, parent, mate);
@@ -233,6 +241,20 @@ public sealed class ColonyPopulation
             && mate.LineageId != parent.LineageId)
             return RejectBirth(colony, ColonyStats.BirthFailure.Incompatibility);
 
+        uint childLoci = 0u;
+        if (rules.MateLociEnabled)
+        {
+            childLoci = MateLoci.Mutate(mate != null ? MateLoci.Cross(parent.MateLoci, mate.MateLoci) : parent.MateLoci,
+                rules.MateLocusMutation);
+            float viability = MateLoci.Viability(MateLoci.Conflicts(childLoci, rules.MateLociPairs), rules.MateConflictLethality);
+            if (viability < 1f && RavineRandom.RangeFloat() >= viability)
+            {
+                parent.Stats.En -= energyCost;
+                _ledger.Flows.Reproduce += energyCost;
+                return RejectBirth(colony, ColonyStats.BirthFailure.Inviable);
+            }
+        }
+
         GeneticParameters childParams;
         if (mate != null)
         {
@@ -259,7 +281,7 @@ public sealed class ColonyPopulation
                      + (Vector3)RavineRandom.GetInsideCircle().normalized * rules.ChildSpawnOffset
                      + Vector3.up * rules.ChildSpawnLift;
 
-        return SpawnEntity(pos, colony, childCtx, parent, mate, birthVitals) != null
+        return SpawnEntity(pos, colony, childCtx, parent, mate, birthVitals, null, childLoci) != null
             || RejectBirth(colony, ColonyStats.BirthFailure.Spawn);
     }
 
@@ -311,6 +333,7 @@ public sealed class ColonyPopulation
             _food.DropCorpse(model, cause);
             model.Brain?.CompleteTerminal(_evolution.TerminalPenaltyFor(model, cause), SimulationClock.Time);
             LifeLog?.Death(model, cause);
+            Lineage.Death(model.EntityId, SimulationClock.Time);
             RemoveEntitySwapBack(model);
             Died?.Invoke(model);
 
@@ -419,6 +442,7 @@ public sealed class ColonyPopulation
         _motifs?.RemoveSwapBack(idx, last);
         _novelty?.RemoveSwapBack(idx, last);
         _helpLog?.RemoveSwapBack(idx, last);
+        _knowledge?.RemoveSwapBack(idx, last);
         _grid.MarkStale();
         _entities.RemoveAt(last);
         model.ManagerIndex = -1;

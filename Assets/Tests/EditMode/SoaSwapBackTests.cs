@@ -52,6 +52,27 @@ public class SoaSwapBackTests
     }
 
     [Test]
+    public void KnowledgeRowsFollowSwapBack()
+    {
+        var bind = TestRules.Bind();
+        try
+        {
+            var system = new KnowledgeSystem(4);
+            var x = new float[KnowledgeSystem.Features];
+            for (int i = 0; i < 4; i++)
+                for (int k = 0; k <= i; k++) system.Push(i, x, k);
+            system.RemoveSwapBack(0, 3);
+            Assert.AreEqual(4, system.ObservationCount(0));
+            Assert.AreEqual(2, system.ObservationCount(1));
+            Assert.AreEqual(0, system.ObservationCount(3));
+        }
+        finally
+        {
+            TestRules.Release(bind);
+        }
+    }
+
+    [Test]
     public void InstinctSlotIsResetAfterSwapBack()
     {
         var system = new InstinctSystem(4);

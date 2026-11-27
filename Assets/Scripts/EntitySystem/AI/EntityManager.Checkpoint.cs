@@ -45,7 +45,7 @@ public partial class EntityManager
             if (e.IsDeathPending || e.IsDisposed) continue;
             snapshot.Agents[slot++] = new PopulationSnapshot.Agent
             {
-                Id = e.EntityId, Parent = e.Parent.EntityId, ColonyId = e.ColonyId,
+                Id = e.EntityId, Parent = e.Parent.EntityId, Mate = e.MateId < e.EntityId ? e.MateId : 0, MateLoci = e.MateLoci, ColonyId = e.ColonyId,
                 Position = _motion.PositionOf(e.ManagerIndex), Age = e.TimeAlive, Caste = (byte)e.Caste, Fixed = e.CasteFixed,
                 Stress = e.Stress, LonelySeconds = e.LonelySeconds, StressLevel = (byte)e.StressLevel,
                 Help = CaptureHelp(e),

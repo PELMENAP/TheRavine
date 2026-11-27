@@ -26,7 +26,7 @@ public class PopulationCheckpointTests
             } },
             Agents = new[] { new PopulationSnapshot.Agent
             {
-                Id = 7, ColonyId = 65, Parent = 3, Age = 130, Health = 8, Energy = 12, Stomach = 5, Carrying = 2,
+                Id = 7, ColonyId = 65, Parent = 3, Mate = 5, MateLoci = 0x80000005u, Age = 130, Health = 8, Energy = 12, Stomach = 5, Carrying = 2,
                 Position = new Vector3(-20, 31, 42), Caste = (byte)Caste.Scout, Fixed = true, AttackRemaining = 0.75, ReviewRemaining = 3.25,
                 Stress = 0.55f, LonelySeconds = 42.5f, StressLevel = 1,
                 Help = new[]
@@ -116,6 +116,40 @@ public class PopulationCheckpointTests
         Assert.IsNull(loaded.Agents[0].Help);
     }
 
+    [Test]
+    public void VersionFourKeepsMateAndLoci()
+    {
+        var s = Example();
+        using var stream = new MemoryStream();
+        PopulationRepository.Write(stream, s);
+        stream.Position = 0;
+        var loaded = PopulationRepository.Read(stream, s.Seed, s.WorldCreated);
+        Assert.AreEqual(5, loaded.Agents[0].Mate);
+        Assert.AreEqual(0x80000005u, loaded.Agents[0].MateLoci);
+    }
+
+    [Test]
+    public void VersionThreeCheckpointLoadsWithoutMateOrLoci()
+    {
+        var s = Example();
+        using var stream = new MemoryStream();
+        WriteVersionThree(stream, s);
+        stream.Position = 0;
+        var loaded = PopulationRepository.Read(stream, s.Seed, s.WorldCreated);
+        Assert.AreEqual(0, loaded.Agents[0].Mate);
+        Assert.AreEqual(0u, loaded.Agents[0].MateLoci);
+        Assert.AreEqual(0.55f, loaded.Agents[0].Stress);
+        Assert.AreEqual(0, loaded.Agents[0].Help.Length);
+    }
+
+    [Test]
+    public void MateYoungerThanChildIsRefused()
+    {
+        var s = Example();
+        s.Agents[0].Mate = s.Agents[0].Id;
+        Assert.Throws<InvalidDataException>(() => s.Validate(s.Seed, s.WorldCreated));
+    }
+
     [TestCase("count")]
     [TestCase("partner")]
     [TestCase("age")]
@@ -169,6 +203,8 @@ public class PopulationCheckpointTests
         s.Agents[0].StressLevel = level;
         Assert.Throws<InvalidDataException>(() => s.Validate(s.Seed, s.WorldCreated));
     }
+
+    private static void WriteVersionThree(Stream stream, PopulationSnapshot s) => WriteLegacy(stream, s, 3);
 
     private static void WriteVersionTwo(Stream stream, PopulationSnapshot s) => WriteLegacy(stream, s, 2);
 
@@ -224,6 +260,7 @@ public class PopulationCheckpointTests
                 w.Write(a.LonelySeconds);
                 w.Write(a.StressLevel);
             }
+            if (version >= 3) w.Write((byte)0);
             foreach (float gene in a.Genes) w.Write(gene);
         }
     }

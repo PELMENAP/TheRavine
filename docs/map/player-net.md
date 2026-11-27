@@ -56,6 +56,7 @@ Open security findings: `docs/audit/security_audit.md`.
 - `PlayerSkillGraph` is an `IComponent` of `PlayerEntity`; the rules are those of `SkillGraphMath`, `SkillGraphSolver` and `SkillGraphXp` that agents use (`docs/map/ai.md`, Skills).
 - The graph is authoritative where `WorldAuthority.IsAuthority`; a client owner holds a mirror filled by `SkillTopologyClientRpc` and `SkillLevelsClientRpc`.
 - `PlayerEntity.UpdateEntityCycle` runs `PlayerSkillGraph.Tick` (decay sweep, solver in auto mode) and re-applies `SkillModifiers` to maximum health and energy.
+- `PlayerStress` (authority, `playerStressEnabled`): the same `CreatureCore` stress rates as agents, contagion from `EntitySpatialGrid.CountAlarmed`; raises basal drain.
 - `PlayerController.StepServerMovement` multiplies speed by the `Speed` and `RunSpeed` modifiers; reach compensation uses the same scale.
 - XP: movement distance (`skillMoveXpDistance`) gives `MoveTo`, a placement `Put`, a pick-up `Take`, speech `Signal`.
 - Commands: `PlayerController.RequestSkillCommand`; the host applies them directly through `PlayerSkillGraph.TryExecute`, a client sends `SkillGraphCommandServerRpc`.

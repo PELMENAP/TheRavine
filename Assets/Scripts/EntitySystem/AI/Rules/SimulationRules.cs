@@ -650,6 +650,23 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float StressLrFloor;
         public readonly float StressAbandonChance;
         public readonly bool MaskStressInput;
+        public readonly bool StressContagionEnabled;
+        public readonly bool PlayerStressEnabled;
+        public readonly float StressContagionRate;
+        public readonly float StressContagionRadius;
+        public readonly bool KnowledgeEnabled;
+        public readonly float KnowledgeObserveInterval;
+        public readonly float KnowledgeSearchInterval;
+        public readonly float KnowledgeNodeCost;
+        public readonly float KnowledgeNoiseFloor;
+        public readonly float KnowledgeMinGain;
+        public readonly float KnowledgeRewardScale;
+        public readonly float KnowledgeRewardCap;
+        public readonly float KnowledgeTeachChance;
+        public readonly float KnowledgeTeachRadius;
+        public readonly float KnowledgeCopyError;
+        public readonly float KnowledgeTargetScale;
+        public readonly float KnowledgeConstScale;
         public readonly bool MaskTaskSignal;
         public readonly float[] PlanMinSecondsByPlan;
         public readonly float[] PlanMaxSecondsByPlan;
@@ -1312,6 +1329,23 @@ public sealed partial class SimulationRules : ScriptableObject
             StressLrFloor = r.stressLrFloor;
             StressAbandonChance = r.stressAbandonChance;
             MaskStressInput = r.maskStressInput;
+            StressContagionEnabled = r.stressContagionEnabled;
+            PlayerStressEnabled = r.playerStressEnabled;
+            StressContagionRate = r.stressContagionRate;
+            StressContagionRadius = r.stressContagionRadius;
+            KnowledgeEnabled = r.knowledgeEnabled;
+            KnowledgeObserveInterval = r.knowledgeObserveInterval;
+            KnowledgeSearchInterval = r.knowledgeSearchInterval;
+            KnowledgeNodeCost = r.knowledgeNodeCost;
+            KnowledgeNoiseFloor = r.knowledgeNoiseFloor;
+            KnowledgeMinGain = r.knowledgeMinGain;
+            KnowledgeRewardScale = r.knowledgeRewardScale;
+            KnowledgeRewardCap = r.knowledgeRewardCap;
+            KnowledgeTeachChance = r.knowledgeTeachChance;
+            KnowledgeTeachRadius = r.knowledgeTeachRadius;
+            KnowledgeCopyError = r.knowledgeCopyError;
+            KnowledgeTargetScale = r.knowledgeTargetScale;
+            KnowledgeConstScale = r.knowledgeConstScale;
             MaskTaskSignal = r.maskTaskSignal;
             PlanMinSecondsByPlan = r.FillPlanSeconds(r.planMinSecondsByPlan, r.planMinSeconds, PlanMinBuf);
             PlanMaxSecondsByPlan = r.FillPlanSeconds(r.planMaxSecondsByPlan, r.planMaxSeconds, PlanMaxBuf);
@@ -1509,6 +1543,8 @@ public sealed partial class SimulationRules : ScriptableObject
         ValidateSystems();
         ValidateSocial();
         ValidateCulture();
+        ValidateLineage();
+        ValidateKnowledge();
     }
 
     private static SimulationRules _active;

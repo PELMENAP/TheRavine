@@ -36,12 +36,17 @@ public struct EnergyFlows
     public float WarmthEmit;
     public float MetabolismCredit;
 
+    public float BiosphereLight;
+    public float BiosphereSeed;
+    public float BiosphereUpkeep;
+    public float BiosphereSoil;
+
     public readonly float Inflow
-        => FoodSpawn + FoodMaturation + ChildStart + FuelHeat + SpawnStart + StarvationReturn + ClampGain + ViralNet + RescaleNet;
+        => FoodSpawn + FoodMaturation + ChildStart + FuelHeat + SpawnStart + StarvationReturn + ClampGain + ViralNet + RescaleNet + BiosphereLight + BiosphereSeed;
 
     public readonly float Outflow
         => Basal + Movement + DigestionLoss + Speech + Threaten + Dash + Strike + Reproduce + RestHeal
-         + CorpseSpoil + DeathLoss + YieldLoss + OverflowLoss + StoreLoss + Wilt + SoilRelease + WarmthDraw + WarmthDecay + Codex + Social;
+         + CorpseSpoil + DeathLoss + YieldLoss + OverflowLoss + StoreLoss + Wilt + SoilRelease + WarmthDraw + WarmthDecay + Codex + Social + BiosphereUpkeep;
 
     public void Add(in EnergyFlows o)
     {
@@ -80,6 +85,11 @@ public struct EnergyFlows
         SoilReturn       += o.SoilReturn;
         WarmthEmit       += o.WarmthEmit;
         MetabolismCredit += o.MetabolismCredit;
+
+        BiosphereLight  += o.BiosphereLight;
+        BiosphereSeed   += o.BiosphereSeed;
+        BiosphereUpkeep += o.BiosphereUpkeep;
+        BiosphereSoil   += o.BiosphereSoil;
     }
 }
 
@@ -95,6 +105,7 @@ public sealed class EnergyLedger
     public float StockCorpses;
     public float StockSoil;
     public float StockWarmth;
+    public float StockBiosphere;
     public float Stock;
     public float StockPrev;
     public float Residual;
@@ -109,7 +120,7 @@ public sealed class EnergyLedger
 
     public void ResetWindow() => Window = default;
 
-    public void Sample(float entities, float nest, float food, float corpses, float soil, float warmth)
+    public void Sample(float entities, float nest, float food, float corpses, float soil, float warmth, float biosphere = 0f)
     {
         float soilPrev   = StockSoil;
         float warmthPrev = StockWarmth;
@@ -119,9 +130,10 @@ public sealed class EnergyLedger
         StockCorpses  = corpses;
         StockSoil     = soil;
         StockWarmth   = warmth;
+        StockBiosphere = biosphere;
 
         StockPrev = Stock;
-        Stock     = entities + nest + food + corpses + soil + warmth;
+        Stock     = entities + nest + food + corpses + soil + warmth + biosphere;
         Last      = Flows;
         Window.Add(in Last);
         Flows     = default;
@@ -137,7 +149,7 @@ public sealed class EnergyLedger
 
         Residual     = Stock - StockPrev - (Last.Inflow - Last.Outflow);
         ResidualSum += Residual;
-        SoilResidual     = soil - soilPrev - (Last.SoilReturn - Last.SoilRelease);
+        SoilResidual     = soil - soilPrev - (Last.SoilReturn - Last.SoilRelease - Last.BiosphereSoil);
         SoilResidualSum += SoilResidual;
         WarmthResidual     = warmth - warmthPrev - (Last.WarmthEmit - Last.WarmthDraw - Last.WarmthDecay);
         WarmthResidualSum += WarmthResidual;

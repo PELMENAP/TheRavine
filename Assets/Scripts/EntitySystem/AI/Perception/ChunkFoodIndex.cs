@@ -211,6 +211,29 @@ public sealed class ChunkFoodIndex
         return stored;
     }
 
+    public float TakeSoil(float wx, float wz, float amount)
+    {
+        if (_map == null || !(amount > 0f)) return 0f;
+        long cell = CellOf(wx, wz);
+        var fc = Resolve(Position2Int.Pack(Position2Int.GetX(cell) >> ChunkShift, Position2Int.GetY(cell) >> ChunkShift), out _);
+        if (fc == null || !(fc.SoilEnergy > 0f)) return 0f;
+        float taken = math.min(amount, fc.SoilEnergy);
+        AddSoil(fc, -taken);
+        return taken;
+    }
+
+    public bool TryAddFood(float2 position, FoodKind kind, out float nutrition)
+    {
+        nutrition = 0f;
+        if (_map == null || kind == FoodKind.Meat || kind == FoodKind.Large) return false;
+        int x = (int)math.floor(position.x * InvScale);
+        int z = (int)math.floor(position.y * InvScale);
+        var fc = Resolve(Position2Int.Pack(x >> ChunkShift, z >> ChunkShift), out ChunkData cd);
+        if (fc == null || !AddAt(fc, cd, x, z, kind)) return false;
+        nutrition = NutritionOf(fc, (z & ChunkMask) * Size + (x & ChunkMask), kind);
+        return true;
+    }
+
     private FoodChunk Resolve(long chunkKey, out ChunkData cd)
     {
         if (!_foodTableBuilt) BuildFoodTable();

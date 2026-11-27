@@ -11,6 +11,7 @@ public struct SurveyInput
     public float  NearestRadius;
     public float  CrowdRadius;
     public float  KinRadius;
+    public float  AlarmRadius;
     public int    ColonyIndex;
     public int    CrowdCap;
     public int    SelfSlot;
@@ -29,6 +30,8 @@ public struct SurveyOutput
     public int   Crowd;
     public int   Kin;
     public int   KinNear;
+    public int   Near;
+    public int   AlarmNear;
     public float NearestDistance;
     public float ForeignDistance;
 
@@ -52,6 +55,7 @@ public struct SurveyJob : IJobFor
     [ReadOnly] public NativeArray<int2>   Cell;
     [ReadOnly] public NativeArray<int>    Colony;
     [ReadOnly] public NativeArray<byte>   Alive;
+    [ReadOnly] public NativeArray<byte>   Alarm;
     [ReadOnly] public NativeArray<float>  Hp;
     [ReadOnly] public NativeArray<float>  Px;
     [ReadOnly] public NativeArray<float>  Py;
@@ -70,7 +74,8 @@ public struct SurveyJob : IJobFor
         float nr2  = q.NearestRadius * q.NearestRadius;
         float cr2  = q.CrowdRadius * q.CrowdRadius;
         float kr2  = q.KinRadius * q.KinRadius;
-        int   ring = math.max(1, (int)math.ceil(math.max(math.max(q.NearestRadius, q.CrowdRadius), q.KinRadius) * InvCell));
+        float ar2  = q.AlarmRadius * q.AlarmRadius;
+        int   ring = math.max(1, (int)math.ceil(math.max(math.max(math.max(q.NearestRadius, q.CrowdRadius), q.KinRadius), q.AlarmRadius) * InvCell));
         int   cx   = (int)math.floor(q.Position.x * InvCell);
         int   cz   = (int)math.floor(q.Position.z * InvCell);
 
@@ -103,10 +108,16 @@ public struct SurveyJob : IJobFor
                 bool asCrowd   = sqr <= cr2 && result.Crowd < q.CrowdCap;
                 bool asForeign = sqr <= nr2 && Colony[n] != q.ColonyIndex;
                 bool asKin     = q.KinRadius > 0f && sqr <= kr2 && Colony[n] == q.ColonyIndex;
-                if (!asNearest && !asCrowd && !asForeign && !asKin) continue;
+                bool asAlarm   = q.AlarmRadius > 0f && sqr <= ar2;
+                if (!asNearest && !asCrowd && !asForeign && !asKin && !asAlarm) continue;
                 if (n == q.SelfSlot || Alive[n] == 0) continue;
 
                 if (asKin) result.KinNear++;
+                if (asAlarm)
+                {
+                    result.Near++;
+                    if (Alarm[n] != 0) result.AlarmNear++;
+                }
 
                 if (asNearest)
                 {
@@ -196,6 +207,7 @@ public sealed class SurveySystem : IDisposable
             Cell       = grid.Cell,
             Colony     = grid.Colony,
             Alive      = grid.Alive,
+            Alarm      = grid.Alarm,
             Hp         = grid.HpFraction,
             Px         = grid.Px,
             Py         = grid.Py,

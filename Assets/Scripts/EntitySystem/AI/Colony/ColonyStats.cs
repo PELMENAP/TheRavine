@@ -57,7 +57,7 @@ public sealed class ColonyStats
 
     public float MeanLifespan => Died > 0 ? LifespanSum / Died : 0f;
 
-    public enum BirthFailure : byte { Capacity, ParentReserve, ChildReserve, Incompatibility, Spawn, Count }
+    public enum BirthFailure : byte { Capacity, ParentReserve, ChildReserve, Incompatibility, Spawn, Inviable, Count }
     public readonly int[] BirthFailures = new int[(int)BirthFailure.Count];
 
     public enum Interaction : byte
@@ -72,7 +72,7 @@ public sealed class ColonyStats
 
     public void RecordInteraction(Interaction kind, double amount = 1d) => Interactions[(int)kind] += amount;
 
-    public enum StressSource : byte { Threat, Hunger, Cold, Lonely, Task, Count }
+    public enum StressSource : byte { Threat, Hunger, Cold, Lonely, Task, Contagion, Count }
 
     public readonly double[] StressAdded = new double[(int)StressSource.Count];
     public double StressSeconds;

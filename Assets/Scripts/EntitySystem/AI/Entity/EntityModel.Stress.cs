@@ -19,6 +19,7 @@ public partial class EntityModel
         AddStress(CreatureCore.HungerStressRate(energy, in r) * dt, ColonyStats.StressSource.Hunger);
         AddStress(CreatureCore.ColdStressRate(environmentDrainMul, exposed, in r) * dt, ColonyStats.StressSource.Cold);
         AddStress(CreatureCore.LonelyStressRate(_aloneSeconds, in r) * dt, ColonyStats.StressSource.Lonely);
+        AddStress(CreatureCore.ContagionStressRate(_alarmNear, _near, in r) * dt, ColonyStats.StressSource.Contagion);
 
         _stressSmooth = CreatureCore.SmoothStress(_stressSmooth, Stress, dt, in r);
         StressLevel = CreatureCore.NextStressLevel(StressLevel, _stressSmooth, in r);

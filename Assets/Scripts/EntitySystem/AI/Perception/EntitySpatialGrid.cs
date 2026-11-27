@@ -22,6 +22,7 @@ public sealed class EntitySpatialGrid : IDisposable
     private NativeArray<int>   _colony;
     private NativeArray<int2>  _cell;
     private NativeArray<byte>  _alive;
+    private NativeArray<byte>  _alarm;
     private NativeArray<float> _hp;
     private NativeArray<float> _px;
     private NativeArray<float> _py;
@@ -46,6 +47,7 @@ public sealed class EntitySpatialGrid : IDisposable
     public NativeArray<int>   Ids     => _ids;
     public NativeArray<int>   Visit   => _visit;
     public NativeArray<byte>  Alive   => _alive;
+    public NativeArray<byte>  Alarm   => _alarm;
     public NativeArray<int>   Colony  => _colony;
     public NativeArray<int2>  Cell    => _cell;
     public NativeArray<float> Py      => _py;
@@ -130,6 +132,7 @@ public sealed class EntitySpatialGrid : IDisposable
             _ids[written]    = e.ManagerIndex;
             _colony[written] = e.Colony != null ? e.Colony.Index : NoColony;
             _alive[written]  = 1;
+            _alarm[written]  = e.StressLevel == CreatureCore.StressHigh ? (byte)1 : (byte)0;
             var stats = e.Stats;
             _hp[written]     = stats != null && !stats.IsDisposed && stats.MaxHealth > 0f ? math.saturate(stats.Hp / stats.MaxHealth) : 1f;
             e.GridSlot       = written;
@@ -335,6 +338,43 @@ public sealed class EntitySpatialGrid : IDisposable
         return written;
     }
 
+    public int CountAlarmed(float3 origin, float radius, out int near)
+    {
+        near = 0;
+        if (_count == 0 || !(radius > 0f)) return 0;
+
+        float r2    = radius * radius;
+        int   ring  = RingOf(radius);
+        int   cx    = CellCoord(origin.x);
+        int   cz    = CellCoord(origin.z);
+        int   epoch = NextEpoch();
+        int   alarmed = 0;
+
+        for (int dz = -ring; dz <= ring; dz++)
+        for (int dx = -ring; dx <= ring; dx++)
+        {
+            int b = BucketOf(cx + dx, cz + dz);
+            if (_visit[b] == epoch) continue;
+            _visit[b] = epoch;
+
+            int s = b == 0 ? 0 : _cellEnd[b - 1];
+            int e = _cellEnd[b];
+
+            for (int k = s; k < e; k++)
+            {
+                int i = _items[k];
+                if (_alive[i] == 0) continue;
+                float ddx = _px[i] - origin.x;
+                float ddy = _py[i] - origin.y;
+                float ddz = _pz[i] - origin.z;
+                if (ddx * ddx + ddy * ddy + ddz * ddz > r2) continue;
+                near++;
+                if (_alarm[i] != 0) alarmed++;
+            }
+        }
+        return alarmed;
+    }
+
     private int RingOf(float radius) => math.max(1, (int)math.ceil(radius * _invCell));
 
     private int CellCoord(float v) => (int)math.floor(v * _invCell);
@@ -366,6 +406,7 @@ public sealed class EntitySpatialGrid : IDisposable
         _colony   = new NativeArray<int>(cap, Allocator.Persistent);
         _cell     = new NativeArray<int2>(cap, Allocator.Persistent);
         _alive    = new NativeArray<byte>(cap, Allocator.Persistent);
+        _alarm    = new NativeArray<byte>(cap, Allocator.Persistent);
         _hp       = new NativeArray<float>(cap, Allocator.Persistent);
         _bucketOf = new int[cap];
         _px       = new NativeArray<float>(cap, Allocator.Persistent);
@@ -388,6 +429,7 @@ public sealed class EntitySpatialGrid : IDisposable
         if (_colony.IsCreated)  _colony.Dispose();
         if (_cell.IsCreated)    _cell.Dispose();
         if (_alive.IsCreated)   _alive.Dispose();
+        if (_alarm.IsCreated)   _alarm.Dispose();
         if (_hp.IsCreated)      _hp.Dispose();
         if (_px.IsCreated)      _px.Dispose();
         if (_py.IsCreated)      _py.Dispose();

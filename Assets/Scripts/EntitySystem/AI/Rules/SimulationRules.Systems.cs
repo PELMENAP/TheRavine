@@ -12,12 +12,16 @@ public sealed partial class SimulationRules
     [SerializeField] private bool sheltersEnabled;
     [SerializeField] private bool maskStressInput;
     [SerializeField] private bool maskTaskSignal;
+    [SerializeField] private bool stressContagionEnabled;
+    [SerializeField] private bool playerStressEnabled;
 
     [SerializeField] private float stressHighThreshold = 0.6f;
     [SerializeField] private float anomalyLoopWindow = 30f;
     [SerializeField] private float anomalyReliefPairThreshold = 1f;
     [SerializeField] private float anomalyMinInvestment = 1e-3f;
     [SerializeField] private int anomalyPairCapacity = 256;
+    [SerializeField] private float stressContagionRate = 0.08f;
+    [SerializeField] private float stressContagionRadius = 8f;
 
     public bool StressSourcesEnabled => stressSourcesEnabled;
     public bool SocialReliefEnabled => socialReliefEnabled;
@@ -29,6 +33,10 @@ public sealed partial class SimulationRules
     public bool SheltersEnabled => sheltersEnabled;
     public bool MaskStressInput => maskStressInput;
     public bool MaskTaskSignal => maskTaskSignal;
+    public bool StressContagionEnabled => stressContagionEnabled;
+    public bool PlayerStressEnabled => playerStressEnabled;
+    public float StressContagionRate => stressContagionRate;
+    public float StressContagionRadius => stressContagionRadius;
 
     public float StressHighThreshold => stressHighThreshold;
     public float AnomalyLoopWindow => anomalyLoopWindow;
@@ -49,6 +57,10 @@ public sealed partial class SimulationRules
         AppendFlag(sb, "shelters", sheltersEnabled);
         AppendFlag(sb, "mask_stress_input", maskStressInput);
         AppendFlag(sb, "mask_task_signal", maskTaskSignal);
+        AppendFlag(sb, "stress_contagion", stressContagionEnabled);
+        AppendFlag(sb, "player_stress", playerStressEnabled);
+        AppendFlag(sb, "mate_loci", mateLociEnabled);
+        AppendFlag(sb, "knowledge", knowledgeEnabled);
         return sb.ToString();
     }
 
@@ -83,5 +95,7 @@ public sealed partial class SimulationRules
         anomalyReliefPairThreshold = Mathf.Max(anomalyReliefPairThreshold, 0f);
         anomalyMinInvestment = Mathf.Max(anomalyMinInvestment, 0f);
         anomalyPairCapacity = Mathf.Clamp(anomalyPairCapacity, 16, 4096);
+        stressContagionRate = Mathf.Max(stressContagionRate, 0f);
+        stressContagionRadius = Mathf.Max(stressContagionRadius, 0f);
     }
 }

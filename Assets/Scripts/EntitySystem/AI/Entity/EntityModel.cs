@@ -47,6 +47,14 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public int EntityId { get; private set; }
     public void AssignId(int id) => EntityId = id;
     public ParentRef Parent { get; private set; }
+    public int MateId { get; private set; }
+    public uint MateLoci { get; private set; }
+
+    internal void SetLineage(int mateId, uint loci)
+    {
+        MateId   = mateId > 0 ? mateId : 0;
+        MateLoci = loci;
+    }
     public Caste Caste { get; private set; } = Caste.Worker;
 
     private InstinctInput _instinctInput;
@@ -88,6 +96,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private float _stressSmooth;
     private float _aloneSeconds;
     private int _kinNear;
+    private int _near;
+    private int _alarmNear;
     public int StressLevel { get; private set; }
     public float StressSmooth => _stressSmooth;
     public float LonelySeconds => _aloneSeconds;
@@ -706,6 +716,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         ServiceLocator.Services.TryGet(out _descriptors);
         ServiceLocator.Services.TryGet(out _motifs);
         ServiceLocator.Services.TryGet(out _helpLog);
+        ServiceLocator.Services.TryGet(out _knowledge);
         Speech = new SpeechComponent();
         _voice = SpeechVoiceBank.ClassOf(in ctx.CoordMLP.Params);
         Points = new PointsOfInterestComponent();

@@ -84,6 +84,7 @@ public partial class EntityManager : MonoBehaviour
     private SimulationLog _simulationLog;
     private AnomalyDetector _anomalies;
     private HelpLog _helpLog;
+    private KnowledgeSystem _knowledge;
     private double _nextSimulationLogTime;
     private double _lastWarmthDecayTime;
     private int _energyConsumers;
@@ -375,7 +376,7 @@ public partial class EntityManager : MonoBehaviour
         var index = FoodIndex;
         if (index != null) index.SumEnergy(out food, out corpses, out soil);
 
-        _ledger.Sample(body, nest, food, corpses, soil, _warmth.Total);
+        _ledger.Sample(body, nest, food, corpses, soil, _warmth.Total, _biosphere != null ? _biosphere.TotalEnergy() : 0f);
         _codex?.NoteEnergy(in _ledger.Last);
     }
 
@@ -441,6 +442,12 @@ public partial class EntityManager : MonoBehaviour
             _helpLog = new HelpLog(_capacity, SimulationRules.Active.HelpLogSize);
             ServiceLocator.Register(_helpLog);
         }
+        CreateBiosphere();
+        if (SimulationRules.Active.KnowledgeEnabled)
+        {
+            _knowledge = new KnowledgeSystem(_capacity);
+            ServiceLocator.Register(_knowledge);
+        }
         if (speechAudio && FindFirstObjectByType<SpeechAudioPlayer>() == null)
             gameObject.AddComponent<SpeechAudioPlayer>().Bind(_speech);
         if (speechLabels && FindFirstObjectByType<SpeechLabelFeed>() == null)
@@ -478,7 +485,7 @@ public partial class EntityManager : MonoBehaviour
     {
         _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue), _skills);
         _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, _capacity, spawnRadius,
-            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _survey, _utility, _thresholds, _skills, _boids, _ledger, _speech, !snapshotStream, _descriptors, _noveltyProgress, _helpLog, _motifs);
+            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _survey, _utility, _thresholds, _skills, _boids, _ledger, _speech, !snapshotStream, _descriptors, _noveltyProgress, _helpLog, _motifs, _knowledge);
         _population.Spawned += RaiseSpawned;
         if (SimulationRules.Active.LifeLogEnabled)
         {
@@ -693,6 +700,7 @@ public partial class EntityManager : MonoBehaviour
         var (foodCancelled, foodIndex) = await ServiceLocator.WaitUntilServiceReady<ChunkFoodIndex>(destroyCancellationToken).SuppressCancellationThrow();
         if (foodCancelled) return;
         _food.Bind(foodIndex, SimulationClock.Time);
+        _biosphere?.BindFood(foodIndex);
 
         if (map.Events != null)
         {
@@ -788,6 +796,7 @@ public partial class EntityManager : MonoBehaviour
             RunColonyDecisions();
             _population.FlushDeferredDisposals();
             _food.Tick();
+            StepBiosphere();
             return;
         }
 
@@ -822,6 +831,7 @@ public partial class EntityManager : MonoBehaviour
         }
 
         _food.Tick();
+        StepBiosphere();
     }
 
     private void PromoteUrgent(int batch)
@@ -1336,6 +1346,8 @@ public partial class EntityManager : MonoBehaviour
         if (_descriptors != null) services.Unregister(_descriptors);
         if (_motifs != null) services.Unregister(_motifs);
         if (_helpLog != null) services.Unregister(_helpLog);
+        if (_knowledge != null) services.Unregister(_knowledge);
+        ReleaseBiosphere();
         services.Unregister(_players);
         services.Unregister(_ledger);
         services.Unregister(_warmth);

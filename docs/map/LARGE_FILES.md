@@ -7,21 +7,21 @@ Line numbers are those of the last generation; after local edits treat them as a
 | File | Lines |
 |---|---|
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1887 |
-| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1528 |
-| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1410 |
+| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1564 |
+| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1422 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationLog.cs` | 1296 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 1121 |
-| `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1092 |
+| `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1115 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 1014 |
 | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 859 |
-| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 815 |
+| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 826 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 778 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs` | 762 |
+| `Assets/Scripts/EntitySystem/AI/Population/ColonyPopulation.cs` | 736 |
 | `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs` | 730 |
-| `Assets/Scripts/EntitySystem/AI/Population/ColonyPopulation.cs` | 712 |
 | `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs` | 683 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 678 |
-| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 640 |
+| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 644 |
 | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 635 |
 | `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs` | 621 |
 | `Assets/Tests/EditMode/SkillGraphTests.cs` | 562 |
@@ -173,97 +173,97 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs`
 
-- 5–1528 class SimulationRules
-  - 1329 CaptureFrame
-  - 1331 Bind
-  - 1342 DeathPenaltyMul
-  - 1351 FillPlanSeconds
-  - 1358 FillCasteAffinityLog
-  - 1366 FillUtilityWeights
-  - 1374 FillPlanCasteDomain
-  - 1382 BuildEndogenousForbiddenMask
-  - 1394 BuildBoidPlanMul
-  - 1401 ColonyChannelTau
-  - 1407 BiomeFertility
-  - 1408 BiomeToxicity
-  - 1417 KindValue
-  - 1420 BiomeValue
-  - 1443 OnValidate
-  - 1525 ThrowNotBound
+- 5–1564 class SimulationRules
+  - 1363 CaptureFrame
+  - 1365 Bind
+  - 1376 DeathPenaltyMul
+  - 1385 FillPlanSeconds
+  - 1392 FillCasteAffinityLog
+  - 1400 FillUtilityWeights
+  - 1408 FillPlanCasteDomain
+  - 1416 BuildEndogenousForbiddenMask
+  - 1428 BuildBoidPlanMul
+  - 1435 ColonyChannelTau
+  - 1441 BiomeFertility
+  - 1442 BiomeToxicity
+  - 1451 KindValue
+  - 1454 BiomeValue
+  - 1477 OnValidate
+  - 1561 ThrowNotBound
   - 8–8 enum EpsilonSchedule
-  - 10–1324 struct RulesFrame
-    - 662 BiomeFertility
-    - 663 BiomeToxicity
-    - 672 RulesFrame
+  - 10–1358 struct RulesFrame
+    - 679 BiomeFertility
+    - 680 BiomeToxicity
+    - 689 RulesFrame
 
 ## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
 
-- 16–1410 class EntityManager
-  - 99 RegisterEnergyConsumer
-  - 100 UnregisterEnergyConsumer
-  - 119 RaiseSpawned
-  - 120 RaiseDied
-  - 178 GetRandomEntity
-  - 181 SeedProbeStrain
-  - 184 SpawnEntity
-  - 191 SpawnChild
-  - 193 UpdateDiagnostics
-  - 202 EvolveGenotypes
-  - 208 SeedRandomStrain
-  - 211 Update
-  - 266 TickSnapshots
-  - 274 TickPuppets
-  - 285 StampAgents
-  - 306 ApplyFireHeat
-  - 334 ApplyWildWind
-  - 354 DecayWarmth
-  - 362 SampleEnergy
-  - 385 ReportThreat
-  - 396 Awake
-  - 477 InitializePopulation
-  - 493 CreateCodex
-  - 514 CaptureCodex
-  - 523 StepCodex
-  - 531 CreateColonies
-  - 555 AddExtraColonies
-  - 579 ScoreColonySite
-  - 591 ApplyScenarioFood
-  - 598 AddColony
-  - 608 SaveBrain
-  - 611 LoadBrain
-  - 614 BrainModelName
-  - 616 ColonyModelName
-  - 619 SaveBestBrainAsync
-  - 629 LoadBrainAsync
-  - 667 ApplyLoadedBrain
-  - 683 Start
-  - 766 DelaySimulation
-  - 777 TickAgents
-  - 827 PromoteUrgent
-  - 877 CloseTickWindow
-  - 904 SweepSkills
-  - 919 SolveSkills
-  - 933 RunTickBatch
-  - 993 BeginColonyBatches
-  - 998 RunColonyDecisions
-  - 1003 RunFlocking
-  - 1021 TickColonies
-  - 1077 UpdatePack
-  - 1093 ChooseCaste
-  - 1131 Stimulus
-  - 1138 TickNests
-  - 1191 SetEntityVisible
-  - 1202 SetEntitiesVisible
-  - 1208 RebuildTickSnapshot
-  - 1239 UpdateVisibility
-  - 1268 UpdateVisibilityByCamera
-  - 1298 CreateNestViews
-  - 1309 DropCarriedObjects
-  - 1319 ReleaseServices
-  - 1325 UnregisterServices
-  - 1349 ResolveRules
-  - 1365 OnDestroy
-  - 1371 DisposeSimulation
+- 16–1422 class EntityManager
+  - 100 RegisterEnergyConsumer
+  - 101 UnregisterEnergyConsumer
+  - 120 RaiseSpawned
+  - 121 RaiseDied
+  - 179 GetRandomEntity
+  - 182 SeedProbeStrain
+  - 185 SpawnEntity
+  - 192 SpawnChild
+  - 194 UpdateDiagnostics
+  - 203 EvolveGenotypes
+  - 209 SeedRandomStrain
+  - 212 Update
+  - 267 TickSnapshots
+  - 275 TickPuppets
+  - 286 StampAgents
+  - 307 ApplyFireHeat
+  - 335 ApplyWildWind
+  - 355 DecayWarmth
+  - 363 SampleEnergy
+  - 386 ReportThreat
+  - 397 Awake
+  - 484 InitializePopulation
+  - 500 CreateCodex
+  - 521 CaptureCodex
+  - 530 StepCodex
+  - 538 CreateColonies
+  - 562 AddExtraColonies
+  - 586 ScoreColonySite
+  - 598 ApplyScenarioFood
+  - 605 AddColony
+  - 615 SaveBrain
+  - 618 LoadBrain
+  - 621 BrainModelName
+  - 623 ColonyModelName
+  - 626 SaveBestBrainAsync
+  - 636 LoadBrainAsync
+  - 674 ApplyLoadedBrain
+  - 690 Start
+  - 774 DelaySimulation
+  - 785 TickAgents
+  - 837 PromoteUrgent
+  - 887 CloseTickWindow
+  - 914 SweepSkills
+  - 929 SolveSkills
+  - 943 RunTickBatch
+  - 1003 BeginColonyBatches
+  - 1008 RunColonyDecisions
+  - 1013 RunFlocking
+  - 1031 TickColonies
+  - 1087 UpdatePack
+  - 1103 ChooseCaste
+  - 1141 Stimulus
+  - 1148 TickNests
+  - 1201 SetEntityVisible
+  - 1212 SetEntitiesVisible
+  - 1218 RebuildTickSnapshot
+  - 1249 UpdateVisibility
+  - 1278 UpdateVisibilityByCamera
+  - 1308 CreateNestViews
+  - 1319 DropCarriedObjects
+  - 1329 ReleaseServices
+  - 1335 UnregisterServices
+  - 1361 ResolveRules
+  - 1377 OnDestroy
+  - 1383 DisposeSimulation
 
 ## `Assets/Scripts/EntitySystem/AI/Debug/SimulationLog.cs`
 
@@ -383,7 +383,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 - 38–63 struct CorpseBite
   - 45 CorpseBite
   - 53 Plan
-- 65–1092 class ChunkFoodIndex
+- 65–1115 class ChunkFoodIndex
   - 88 ChunkFoodIndex
   - 94 FoodByKind
   - 100 BuildFoodTable
@@ -393,49 +393,51 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 194 CellCenter
   - 198 CellOf
   - 201 ReturnToSoil
-  - 214 Resolve
-  - 300 ReleaseCell
-  - 310 ReleaseChunkState
-  - 330 PruneUnloaded
-  - 355 EnsureKeyBuffer
-  - 362 TryFindNearestFood
-  - 444 TryLocate
-  - 462 TryGetKind
-  - 470 TryGetTraits
-  - 480 NutritionOf
-  - 490 TryClaim
-  - 526 BiteMeat
-  - 553 TryTakePayload
-  - 555 DropPayload
-  - 560 RemoveAt
-  - 587 AddAt
-  - 618 InfectNearby
-  - 655 TryAddCorpse
-  - 697 SetFoodZones
-  - 703 TickEcology
-  - 799 TryGetSoil
-  - 814 NestScarcity
-  - 837 RollKind
-  - 846 ComputeFertility
-  - 854 SpoilToSoil
-  - 862 WiltPlants
-  - 896 AgeFood
-  - 923 SumEnergy
-  - 930 SumEnergyScan
-  - 964 SetMeat
-  - 970 RemoveMeat
-  - 975 AddFood
-  - 981 AddSoil
-  - 987 TryFoodKind
-  - 997 ScanFood
-  - 1014 TickMeat
-  - 1046 RemoveSpoiledCorpse
-  - 1054 MarkUnreachable
-  - 1056 ExpireUnreachable
-  - 1067 FindClaim
-  - 1074 AddClaim
-  - 1080 RemoveClaimAt
-  - 1087 ExpireClaims
+  - 214 TakeSoil
+  - 225 TryAddFood
+  - 237 Resolve
+  - 323 ReleaseCell
+  - 333 ReleaseChunkState
+  - 353 PruneUnloaded
+  - 378 EnsureKeyBuffer
+  - 385 TryFindNearestFood
+  - 467 TryLocate
+  - 485 TryGetKind
+  - 493 TryGetTraits
+  - 503 NutritionOf
+  - 513 TryClaim
+  - 549 BiteMeat
+  - 576 TryTakePayload
+  - 578 DropPayload
+  - 583 RemoveAt
+  - 610 AddAt
+  - 641 InfectNearby
+  - 678 TryAddCorpse
+  - 720 SetFoodZones
+  - 726 TickEcology
+  - 822 TryGetSoil
+  - 837 NestScarcity
+  - 860 RollKind
+  - 869 ComputeFertility
+  - 877 SpoilToSoil
+  - 885 WiltPlants
+  - 919 AgeFood
+  - 946 SumEnergy
+  - 953 SumEnergyScan
+  - 987 SetMeat
+  - 993 RemoveMeat
+  - 998 AddFood
+  - 1004 AddSoil
+  - 1010 TryFoodKind
+  - 1020 ScanFood
+  - 1037 TickMeat
+  - 1069 RemoveSpoiledCorpse
+  - 1077 MarkUnreachable
+  - 1079 ExpireUnreachable
+  - 1090 FindClaim
+  - 1097 AddClaim
+  - 1103 RemoveClaimAt
+  - 1110 ExpireClaims
   - 123–156 class FoodChunk
     - 140 Reset
   - 177–182 struct LargeClaim
@@ -570,54 +572,55 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs`
 
-- 12–815 class EntityModel
+- 12–826 class EntityModel
   - 32 Activate
   - 33 Deactivate
   - 48 AssignId
-  - 96 AddStress
-  - 104 AddExtrinsicReward
-  - 105 ConsumeExtrinsicReward
-  - 131 PlanRewardEma
-  - 161 ClearRecruit
-  - 162 Recruit
-  - 170 NoteFoodSite
-  - 175 TryGetFoodSite
-  - 182 RecordStored
-  - 201 SetLeader
-  - 213 SetFlock
-  - 215 BuildBoidAgent
-  - 277 SelectHuntTarget
-  - 304 RestoreCondition
-  - 329 RestoreParent
-  - 331 AssignCaste
-  - 344 SyncCount
-  - 361 ClearCount
-  - 367 ActionMask
-  - 376 SetLastAction
-  - 386 CreateActionTimes
-  - 393 SinceAction
-  - 400 NoteThreatDisplay
-  - 404 TryGetKinTarget
-  - 436 NextPlanSide
-  - 442 Carry
-  - 448 TakeCarried
-  - 456 ReceiveFood
-  - 462 IngestFood
-  - 471 ConsumeReceivedFood
-  - 481 Warn
-  - 493 NoteVictim
-  - 514 TryGetThreatSource
-  - 539 IsDryNestSite
-  - 572 MarkDeathPending
-  - 606 InvalidateCachedFood
-  - 633 TryStartAttackCooldown
-  - 641 SetUp
-  - 649 RequestReproduce
-  - 657 Configure
-  - 734 Init
-  - 774 InterruptCommand
-  - 776 Dispose
-  - 799 DeepClean
+  - 53 SetLineage
+  - 106 AddStress
+  - 114 AddExtrinsicReward
+  - 115 ConsumeExtrinsicReward
+  - 141 PlanRewardEma
+  - 171 ClearRecruit
+  - 172 Recruit
+  - 180 NoteFoodSite
+  - 185 TryGetFoodSite
+  - 192 RecordStored
+  - 211 SetLeader
+  - 223 SetFlock
+  - 225 BuildBoidAgent
+  - 287 SelectHuntTarget
+  - 314 RestoreCondition
+  - 339 RestoreParent
+  - 341 AssignCaste
+  - 354 SyncCount
+  - 371 ClearCount
+  - 377 ActionMask
+  - 386 SetLastAction
+  - 396 CreateActionTimes
+  - 403 SinceAction
+  - 410 NoteThreatDisplay
+  - 414 TryGetKinTarget
+  - 446 NextPlanSide
+  - 452 Carry
+  - 458 TakeCarried
+  - 466 ReceiveFood
+  - 472 IngestFood
+  - 481 ConsumeReceivedFood
+  - 491 Warn
+  - 503 NoteVictim
+  - 524 TryGetThreatSource
+  - 549 IsDryNestSite
+  - 582 MarkDeathPending
+  - 616 InvalidateCachedFood
+  - 643 TryStartAttackCooldown
+  - 651 SetUp
+  - 659 RequestReproduce
+  - 667 Configure
+  - 745 Init
+  - 785 InterruptCommand
+  - 787 Dispose
+  - 810 DeepClean
   - 14–14 enum FitnessEvent
 
 ## `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs`
@@ -708,6 +711,39 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 741 GetGeneticParameters
   - 743 Dispose
 
+## `Assets/Scripts/EntitySystem/AI/Population/ColonyPopulation.cs`
+
+- 9–736 class ColonyPopulation
+  - 56 RestoreLastId
+  - 61 HasFreeSlot
+  - 69 ColonyPopulation
+  - 105 StartPredatorClock
+  - 107 SpawnEntity
+  - 136 RegisterEntity
+  - 220 SpawnChild
+  - 288 TryBirthTransfer
+  - 295 RejectBirth
+  - 301 RandomPosition
+  - 308 RaiseTickUrgent
+  - 310 HandleEntityDied
+  - 318 ProcessPendingDeaths
+  - 346 BroadcastDeath
+  - 388 FlushDeferredDisposals
+  - 398 DiscardEntities
+  - 409 RemoveEntitySwapBack
+  - 452 ElectLeader
+  - 469 HandleLeaderDeath
+  - 488 CheckExtinctions
+  - 508 PickFissionParent
+  - 524 PickDonor
+  - 542 ReseedColony
+  - 579 ReplaceColonyBrain
+  - 593 MoveFissionShare
+  - 618 TickTransplants
+  - 633 Transplant
+  - 659 MoveMember
+  - 705 TickPredators
+
 ## `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs`
 
 - 8–694 class RiveParser
@@ -753,39 +789,6 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 713 Token
 - 721–729 class RiveParseException
   - 725 RiveParseException
-
-## `Assets/Scripts/EntitySystem/AI/Population/ColonyPopulation.cs`
-
-- 9–712 class ColonyPopulation
-  - 54 RestoreLastId
-  - 59 HasFreeSlot
-  - 67 ColonyPopulation
-  - 101 StartPredatorClock
-  - 103 SpawnEntity
-  - 132 RegisterEntity
-  - 212 SpawnChild
-  - 266 TryBirthTransfer
-  - 273 RejectBirth
-  - 279 RandomPosition
-  - 286 RaiseTickUrgent
-  - 288 HandleEntityDied
-  - 296 ProcessPendingDeaths
-  - 323 BroadcastDeath
-  - 365 FlushDeferredDisposals
-  - 375 DiscardEntities
-  - 386 RemoveEntitySwapBack
-  - 428 ElectLeader
-  - 445 HandleLeaderDeath
-  - 464 CheckExtinctions
-  - 484 PickFissionParent
-  - 500 PickDonor
-  - 518 ReseedColony
-  - 555 ReplaceColonyBrain
-  - 569 MoveFissionShare
-  - 594 TickTransplants
-  - 609 Transplant
-  - 635 MoveMember
-  - 681 TickPredators
 
 ## `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs`
 
@@ -877,7 +880,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs`
 
-- 11–640 class EntityModel
+- 11–644 class EntityModel
   - 24 IsAliveForTick
   - 27 SubmitDecision
   - 34 BeginCycle
@@ -885,13 +888,13 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 63 NoisyDirection
   - 70 UpdateDormancy
   - 87 RunCycleHead
-  - 176 RunCycleTail
-  - 525 ComputePlanHints
-  - 576 EndCycle
-  - 597 NotifyView
-  - 599 StartDecision
-  - 616 ComputeDangerLevel
-  - 629 ComputeBreedReadiness
+  - 177 RunCycleTail
+  - 529 ComputePlanHints
+  - 580 EndCycle
+  - 601 NotifyView
+  - 603 StartDecision
+  - 620 ComputeDangerLevel
+  - 633 ComputeBreedReadiness
 
 ## `Assets/Scripts/EntitySystem/Job/MotionSystem.cs`
 

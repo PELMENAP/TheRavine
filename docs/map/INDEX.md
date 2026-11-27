@@ -14,7 +14,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Core/ServiceLocator` | 3 | 311 |
 | `Assets/Scripts/Core/Settings` | 5 | 904 |
 | `Assets/Scripts/Core/Settings/GameSettings` | 2 | 110 |
-| `Assets/Scripts/Core/Settings/WorldData` | 7 | 683 |
+| `Assets/Scripts/Core/Settings/WorldData` | 7 | 693 |
 | `Assets/Scripts/Core/Settings/WorldSettings` | 2 | 142 |
 | `Assets/Scripts/Core/Storage` | 5 | 352 |
 | `Assets/Scripts/Core/Timer` | 4 | 271 |
@@ -22,36 +22,39 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 19 | 2317 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
-| `Assets/Scripts/EntitySystem/AI` | 12 | 2673 |
+| `Assets/Scripts/EntitySystem/AI` | 13 | 2726 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
 | `Assets/Scripts/EntitySystem/AI/Codex` | 10 | 939 |
-| `Assets/Scripts/EntitySystem/AI/Colony` | 11 | 1076 |
+| `Assets/Scripts/EntitySystem/AI/Colony` | 11 | 1088 |
 | `Assets/Scripts/EntitySystem/AI/Debug` | 13 | 4235 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 3 | 966 |
-| `Assets/Scripts/EntitySystem/AI/Entity` | 20 | 3163 |
+| `Assets/Scripts/EntitySystem/AI/Entity` | 21 | 3217 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1606 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 697 |
 | `Assets/Scripts/EntitySystem/AI/Flock` | 1 | 230 |
 | `Assets/Scripts/EntitySystem/AI/Instinct` | 1 | 441 |
+| `Assets/Scripts/EntitySystem/AI/Knowledge` | 2 | 444 |
 | `Assets/Scripts/EntitySystem/AI/LSTM` | 2 | 257 |
+| `Assets/Scripts/EntitySystem/AI/Lineage` | 3 | 232 |
 | `Assets/Scripts/EntitySystem/AI/Nest` | 1 | 394 |
-| `Assets/Scripts/EntitySystem/AI/Perception` | 10 | 2377 |
+| `Assets/Scripts/EntitySystem/AI/Perception` | 10 | 2454 |
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 589 |
-| `Assets/Scripts/EntitySystem/AI/Population` | 8 | 1667 |
-| `Assets/Scripts/EntitySystem/AI/Rules` | 14 | 3673 |
+| `Assets/Scripts/EntitySystem/AI/Population` | 8 | 1716 |
+| `Assets/Scripts/EntitySystem/AI/Rules` | 16 | 3786 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI` | 24 | 3901 |
 | `Assets/Scripts/EntitySystem/AI/Skills` | 19 | 2174 |
 | `Assets/Scripts/EntitySystem/AI/Social` | 2 | 296 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 8 | 1298 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
+| `Assets/Scripts/EntitySystem/Biosphere` | 11 | 1130 |
 | `Assets/Scripts/EntitySystem/Casino` | 4 | 806 |
 | `Assets/Scripts/EntitySystem/Command` | 4 | 153 |
 | `Assets/Scripts/EntitySystem/Entityes` | 1 | 121 |
 | `Assets/Scripts/EntitySystem/Entityes/Bot/BotBehavious` | 3 | 55 |
 | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts` | 10 | 986 |
 | `Assets/Scripts/EntitySystem/Entityes/Mob` | 4 | 456 |
-| `Assets/Scripts/EntitySystem/Entityes/Player` | 7 | 1583 |
-| `Assets/Scripts/EntitySystem/Entityes/Player/Components` | 8 | 790 |
+| `Assets/Scripts/EntitySystem/Entityes/Player` | 7 | 1599 |
+| `Assets/Scripts/EntitySystem/Entityes/Player/Components` | 9 | 824 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/Joystick Pack` | 2 | 116 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerBehaviours` | 3 | 79 |
 | `Assets/Scripts/EntitySystem/Info` | 1 | 24 |
@@ -87,10 +90,10 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs` | 7 | 954 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision` | 7 | 396 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator` | 7 | 1135 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless` | 7 | 1531 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless` | 7 | 1527 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ObjectGenerator` | 4 | 406 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Rendering` | 3 | 721 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/RippleSystem` | 3 | 169 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/RippleSystem` | 3 | 465 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/StructGenerator` | 5 | 446 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Ticks` | 5 | 497 |
 | `Assets/Scripts/ObjectSystem/ObjectInfo` | 3 | 184 |
@@ -116,7 +119,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 948 |
-| `Assets/Tests/EditMode` | 86 | 14282 |
+| `Assets/Tests/EditMode` | 90 | 14961 |
 
 ## Assemblies
 
@@ -322,6 +325,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | LegParams | struct | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/LegStore.cs` | 9 |
 | LegState | enum | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/LegStore.cs` | 7 |
 | LevelCell | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/BuildingVolume.cs` | 3 |
+| LineageRecord | struct | `Assets/Scripts/EntitySystem/AI/Lineage/LineageStore.cs` | 4 |
 | LiteralNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 17 |
 | LogNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 95 |
 | LSTMMemory | class | `Assets/Scripts/EntitySystem/AI/LSTM/LSTMMemoryStorage.cs` | 5 |
@@ -434,12 +438,13 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | SpeechCredit | struct | `Assets/Scripts/EntitySystem/AI/Speech/SpeechBus.cs` | 9 |
 | SpeechDeliverJob | struct | `Assets/Scripts/EntitySystem/AI/Speech/SpeechBus.cs` | 20 |
 | SpeechSyllableJob | struct | `Assets/Scripts/EntitySystem/AI/Speech/SpeechVoiceBank.cs` | 7 |
+| SplashEvent | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/RippleSystem/RippleStampSystem.cs` | 5 |
 | StatementNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 55 |
 | StringBuilderNumeric | class | `Assets/Scripts/EntitySystem/AI/Debug/NestDebugView.cs` | 305 |
 | StructureSpawnPoint | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1842 |
 | SurveyInput | struct | `Assets/Scripts/EntitySystem/AI/Perception/SurveySystem.cs` | 8 |
-| SurveyJob | struct | `Assets/Scripts/EntitySystem/AI/Perception/SurveySystem.cs` | 44 |
-| SurveyOutput | struct | `Assets/Scripts/EntitySystem/AI/Perception/SurveySystem.cs` | 25 |
+| SurveyJob | struct | `Assets/Scripts/EntitySystem/AI/Perception/SurveySystem.cs` | 47 |
+| SurveyOutput | struct | `Assets/Scripts/EntitySystem/AI/Perception/SurveySystem.cs` | 26 |
 | TeleportCommand | class | `Assets/Scripts/Terminal/SetPlayerCommand.cs` | 26 |
 | TerminalCommandNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 89 |
 | TerrainIndexBuilder | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/TerrainMeshJobs.cs` | 168 |

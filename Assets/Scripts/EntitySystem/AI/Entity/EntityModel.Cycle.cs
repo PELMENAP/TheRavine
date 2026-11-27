@@ -155,6 +155,7 @@ public partial class EntityModel
             NearestRadius = detect,
             CrowdRadius   = rules.CrowdRadius,
             KinRadius     = rules.StressSourcesEnabled ? rules.LonelinessRadius : 0f,
+            AlarmRadius   = rules.StressSourcesEnabled && rules.StressContagionEnabled ? rules.StressContagionRadius : 0f,
             ColonyIndex   = Colony != null ? Colony.Index : -1,
             CrowdCap      = Neighbors.Length,
             SelfSlot      = GridSlot,
@@ -195,6 +196,8 @@ public partial class EntityModel
         _crowd           = survey.Crowd;
         _kinCrowd        = survey.Kin;
         _kinNear         = survey.KinNear;
+        _near            = survey.Near;
+        _alarmNear       = survey.AlarmNear;
         _nearestForeign  = Perception.ResolveSlot(survey.ForeignSlot);
         _nearestForeignDistance = _nearestForeign != null ? survey.ForeignDistance : -1f;
         float outnumbered = math.saturate((_crowd - _kinCrowd - _kinCrowd) / math.max(rules.OutnumberedNorm, 1e-3f));
@@ -338,6 +341,7 @@ public partial class EntityModel
 
         float environmentMul = CreatureCore.EnvironmentDrainMul(Digestion.WellFed, night && !IsAtNest, mods.Fever, _winter, in rules, _dormant);
         UpdateStress(dt, environmentMul, night, in rules);
+        StepKnowledge(now, dayPhase, detect, in rules);
         float basalMul = Tuning.BasalDrainMul
                        * environmentMul
                        * CreatureCore.StressDrainMul(StressEffect, in rules)

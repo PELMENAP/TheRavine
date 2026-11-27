@@ -26,6 +26,8 @@ public sealed class EvolutionService
 
     private const int PredispositionSample = 64;
     private readonly float[] _predispositionScratch = new float[PredispositionSample * SimulationRules.PredispositionSize];
+    private readonly uint[] _lociA = new uint[PredispositionSample];
+    private readonly uint[] _lociB = new uint[PredispositionSample];
 
     public float AvgEntropy { get; private set; }
     public float AvgFitness { get; private set; }
@@ -150,6 +152,29 @@ public sealed class EvolutionService
                 pairs++;
             }
         return (float)(sum / pairs);
+    }
+
+    public float LociDivergence(ColonyState a, ColonyState b)
+    {
+        if (a == null || b == null) return 0f;
+        int na = SampleLoci(a, _lociA);
+        int nb = SampleLoci(b, _lociB);
+        return MateLoci.Divergence(_lociA, na, _lociB, nb);
+    }
+
+    private int SampleLoci(ColonyState colony, uint[] target)
+    {
+        var members = colony.Members;
+        int n = members.Length;
+        int take = Math.Min(n, target.Length);
+        int got = 0;
+        for (int i = 0; i < take; i++)
+        {
+            var model = _entities[members[(int)((long)i * n / take)]];
+            if (model == null || model.IsDisposed) continue;
+            target[got++] = model.MateLoci;
+        }
+        return got;
     }
 
     public EntityModel SelectMate(EntityModel self)

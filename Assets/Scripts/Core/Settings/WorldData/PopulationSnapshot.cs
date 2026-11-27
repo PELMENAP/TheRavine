@@ -7,7 +7,7 @@ namespace TheRavine.Base
 {
     public sealed class PopulationSnapshot
     {
-        public const int Version = 3;
+        public const int Version = 4;
         public const int MaxHelpEntries = 32;
         public const int MinVersion = 1;
         public const int GeneCount = 53;
@@ -32,7 +32,8 @@ namespace TheRavine.Base
 
         public struct Agent
         {
-            public int Id, ColonyId, Parent;
+            public int Id, ColonyId, Parent, Mate;
+            public uint MateLoci;
             public Vector3 Position;
             public float Age, Health, Energy, Stomach, Carrying;
             public double AttackRemaining, ReviewRemaining;
@@ -83,7 +84,7 @@ namespace TheRavine.Base
             foreach (var a in Agents)
             {
                 Require(a.Id > 0 && a.Id <= LastEntityId && agents.TryAdd(a.Id, a.ColonyId), "invalid or duplicate agent ID");
-                Require(colonies.Contains(a.ColonyId) && a.Parent >= 0 && a.Parent < a.Id, "invalid colony or parent reference");
+                Require(colonies.Contains(a.ColonyId) && a.Parent >= 0 && a.Parent < a.Id && a.Mate >= 0 && a.Mate < a.Id, "invalid colony or parent reference");
                 Require(a.Caste < 4 && WorldCoordinate(a.Position.x) && WorldCoordinate(a.Position.y) && WorldCoordinate(a.Position.z), "invalid caste or position");
                 Require(PositiveOrZero(a.Age) && a.Health > 0 && Finite(a.Health) && PositiveOrZero(a.Energy) &&
                     PositiveOrZero(a.Stomach) && PositiveOrZero(a.Carrying) && Duration(a.AttackRemaining) && Duration(a.ReviewRemaining), "invalid vitals");
