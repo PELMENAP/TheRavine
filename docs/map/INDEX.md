@@ -14,13 +14,13 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Core/ServiceLocator` | 3 | 311 |
 | `Assets/Scripts/Core/Settings` | 5 | 904 |
 | `Assets/Scripts/Core/Settings/GameSettings` | 2 | 110 |
-| `Assets/Scripts/Core/Settings/WorldData` | 7 | 683 |
+| `Assets/Scripts/Core/Settings/WorldData` | 7 | 695 |
 | `Assets/Scripts/Core/Settings/WorldSettings` | 2 | 142 |
 | `Assets/Scripts/Core/Storage` | 5 | 352 |
 | `Assets/Scripts/Core/Timer` | 4 | 271 |
 | `Assets/Scripts/Core/Utilities` | 10 | 1922 |
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
-| `Assets/Scripts/Editor` | 20 | 2622 |
+| `Assets/Scripts/Editor` | 21 | 2669 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
 | `Assets/Scripts/EntitySystem/AI` | 12 | 2703 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
@@ -41,7 +41,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Rules` | 17 | 3776 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI` | 27 | 3926 |
 | `Assets/Scripts/EntitySystem/AI/Skills` | 19 | 2174 |
-| `Assets/Scripts/EntitySystem/AI/Social` | 2 | 296 |
+| `Assets/Scripts/EntitySystem/AI/Social` | 2 | 302 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 8 | 1298 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
 | `Assets/Scripts/EntitySystem/Casino` | 4 | 806 |
@@ -115,7 +115,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 948 |
-| `Assets/Tests/EditMode` | 88 | 14742 |
+| `Assets/Tests/EditMode` | 88 | 14766 |
 
 ## Assemblies
 
