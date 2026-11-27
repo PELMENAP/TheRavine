@@ -72,6 +72,7 @@
         _FogDaylightInfluence("Fog Daylight Influence", Range(0, 1)) = 1
         _FogAlpha("Fog Alpha", Range(0, 1)) = 1
         _Exposure ("Exposure", Float) = 1.0
+        _LightningSky ("Lightning Sky Gain", Float) = 0.6
     }
 
     SubShader 
@@ -115,6 +116,7 @@
                 half3 _SkyNightColor;
                 half3 _NightTintColor;
                 half _Exposure;
+                half _LightningSky;
                 half _FogMinAmount;
                 half _FogHeight;
                 half _FogAmount;
@@ -146,6 +148,8 @@
                 float3 _HazeRotationAxis;
                 float _HazeRotationSpeed;
             CBUFFER_END
+
+            float _LightningFlash;
 
             TEXTURECUBE(_Tex1); SAMPLER(sampler_Tex1);
             TEXTURECUBE(_Tex2); SAMPLER(sampler_Tex2);
@@ -393,6 +397,8 @@
                 half3 fogColor = _FogColor;
                 half3 fogSkyTint = lerp(1.0, skyTint, _FogDaylightInfluence);
                 col = lerp(col, fogColor * fogSkyTint, fog);
+
+                col += half3(0.55, 0.62, 0.9) * (_LightningFlash * _LightningSky);
 
                 col = ACESFilm(col * _Exposure);
 

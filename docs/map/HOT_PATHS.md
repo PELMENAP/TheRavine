@@ -21,7 +21,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 9. Fourth loop: `EntityModel.EndCycle` (the view is notified only while the agent is visible).
 10. `MovePlanner.Flush`, then `InfectionCoordinator.Spread` on the batch.
 11. At the end of a window, `CloseTickWindow`: deaths, extinctions, predators, `ApplyPendingGradients`, nests, castes, `SweepSkills`, `SolveSkills`, visibility.
-12. Every frame after the tick: `EntityManager.ApplyFireHeat` (once per fire step), `EntityManager.ApplyWildWind` (once per wind step while active), `SpeechBus.Flush`, `MovePlanner.Flush`, `MotionSystem.Step`, `StampAgents`, `AgentSnapshotStream.Tick`.
+12. Every frame after the tick: `EntityManager.ApplyFireHeat` (once per fire step), `EntityManager.ApplyWildWind` (once per wind step while active), `EntityManager.ApplyLightning` (once per weather step with ground strikes), `SpeechBus.Flush`, `MovePlanner.Flush`, `MotionSystem.Step`, `StampAgents`, `AgentSnapshotStream.Tick`.
 
 | Area | File | Hot methods |
 |---|---|---|
@@ -92,6 +92,11 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 | Tick handlers | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/NAL_PC.cs`, `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireEvent.cs` | `OnRandomTick`, `Step`, `Spread`, `HeatDamageAt` |
 | Map events | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/GlobalMapEvents.cs` | `Tick` |
 | Fire rendering | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireView.cs` | `Render`, `Rebuild`, `UpdateLights` |
+| Weather | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather/WeatherEvent.cs` | `Step`, `RainAt`, `WetnessAt`, `WindAt`, `ChargeAt`, `CloudCoverAt` |
+| Weather field | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather/WeatherFieldJob.cs` | `WeatherFieldJob` (Burst, per texel); test `WeatherFieldJobTests` |
+| Lightning | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather/WeatherEvent.Lightning.cs` | `StrikeStep`, `Strike`, `Record`, `LightningDamageAt`, `TryFindNearestStrike` |
+| Weather math | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather/WeatherMath.cs` | whole file; test `WeatherFieldJobTests.WeatherMathDoesNotAllocate` |
+| Weather rendering | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather/WeatherView.cs`, `LightningView.cs` | `WeatherView.Render`, `UploadMap`, `RebuildShafts`, `UpdateSky`, `LightningView.Render`, `AddBolt` |
 | Chunk jobs | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs/` | Burst jobs; budgeted by `FrameBudget`, not per frame |
 
 ## Rendering

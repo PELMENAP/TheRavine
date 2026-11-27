@@ -65,4 +65,50 @@ public class FireMathTests
         Assert.AreEqual(1.5f, FireMath.SeasonFactor(1f, false, 0.5f), 1e-6f);
         Assert.AreEqual(0.5f, FireMath.SeasonFactor(-1f, false, 0.5f), 1e-6f);
     }
+
+    [Test]
+    public void QuenchNeedGrowsWithSize()
+    {
+        FireRules r = Rules();
+        float previous = 0f;
+        for (float size = r.minSize; size <= r.maxSize; size += 0.25f)
+        {
+            float need = FireMath.QuenchNeed(size, r);
+            Assert.Greater(need, previous);
+            previous = need;
+        }
+        Assert.AreEqual(r.quenchPerSize, FireMath.QuenchNeed(1f, r), 1e-6f);
+    }
+
+    [Test]
+    public void RainDampIsOneWithoutWaterAndZeroAtFullRainOrWetTarget()
+    {
+        FireRules r = Rules();
+        Assert.AreEqual(1f, FireMath.RainDamp(0f, 0f, r), 1e-6f);
+        Assert.AreEqual(0f, FireMath.RainDamp(1f, 0f, r), 1e-6f);
+        Assert.AreEqual(0f, FireMath.RainDamp(0f, r.wetIgnitionLimit, r), 1e-6f);
+        Assert.AreEqual(0f, FireMath.RainDamp(0f, 1f, r), 1e-6f);
+        Assert.Greater(FireMath.RainDamp(0.2f, 0f, r), FireMath.RainDamp(0.6f, 0f, r));
+        Assert.Greater(FireMath.RainDamp(0f, 0.1f, r), FireMath.RainDamp(0f, 0.5f, r));
+    }
+
+    [Test]
+    public void RainStretchesBurnTimeButNeverStopsIt()
+    {
+        FireRules r = Rules();
+        Assert.AreEqual(1f, FireMath.BurnRate(0f, r), 1e-6f);
+        Assert.Less(FireMath.BurnRate(0.5f, r), 1f);
+        Assert.Greater(FireMath.BurnRate(1f, r), 0f);
+    }
+
+    [Test]
+    public void OneStepOfHeavyRainQuenchesTheSmallestFireButNotTheLargest()
+    {
+        FireRules r = Rules();
+        float rain = 1f;
+        float step = r.stepInterval;
+        Assert.GreaterOrEqual(rain * step, FireMath.QuenchNeed(r.minSize, r));
+        Assert.Less(rain * step, FireMath.QuenchNeed(r.maxSize, r));
+        Assert.Greater(FireMath.QuenchNeed(r.maxSize, r) / (0.5f * step), 60f);
+    }
 }

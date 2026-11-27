@@ -52,6 +52,7 @@ Shader "The Ravine/Terrain/BiomeTerrain"
         HLSLINCLUDE
         #pragma target 4.5
         #include "Assets/Shaders/Terrain/BiomeTerrainCommon.hlsl"
+        #include "Assets/Shaders/Effects/WeatherCommon.hlsl"
         ENDHLSL
 
         Pass
@@ -125,7 +126,7 @@ Shader "The Ravine/Terrain/BiomeTerrain"
                 half4 shadowMask = half4(1, 1, 1, 1);
 
                 Light mainLight = GetMainLight(inputData.shadowCoord);
-                float mainAtten = mainLight.shadowAttenuation * mainLight.distanceAttenuation * ao.directAmbientOcclusion;
+                float mainAtten = mainLight.shadowAttenuation * mainLight.distanceAttenuation * ao.directAmbientOcclusion * WeatherCloudShade(input.positionWS);
                 float3 halfDir = normalize(mainLight.direction + viewDirWS);
                 float3 lighting = mainLight.color * mainAtten * saturate(dot(normalWS, mainLight.direction));
                 float3 specular = mainLight.color * mainAtten * pow(saturate(dot(normalWS, halfDir)), specPower) * smoothness;

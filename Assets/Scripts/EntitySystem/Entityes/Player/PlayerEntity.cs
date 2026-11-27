@@ -25,6 +25,7 @@ namespace TheRavine.EntityControl
         private float baseMaxEnergy;
         private double lastCycleTime;
         private int windStepSeen = -1;
+        private int lightningStepSeen = -1;
         private ulong clientId;
         private readonly RavineLogger logger;
         public PlayerEntity(RavineLogger logger)
@@ -149,6 +150,12 @@ namespace TheRavine.EntityControl
                 mortality.NoteHarm(DeathCause.Wind, stats.Hp - gust);
                 stats.Hp -= gust;
             }
+            float bolt = LightningDamage();
+            if (bolt > 0f)
+            {
+                mortality.NoteHarm(DeathCause.Lightning, stats.Hp - bolt);
+                stats.Hp -= bolt;
+            }
             stats.Commit();
             energy.Sync();
         }
@@ -201,6 +208,18 @@ namespace TheRavine.EntityControl
                 wind.ReportCreature(p);
             }
             return wind.DamageAt(p) * dt;
+        }
+
+        private float LightningDamage()
+        {
+            if (map == null && !ServiceLocator.Services.TryGet(out map)) return 0f;
+            WeatherEvent weather = map.Events?.Weather;
+            if (weather == null || weather.IsDisposed || transformComponent == null) return 0f;
+            if (weather.StepIndex == lightningStepSeen) return 0f;
+            lightningStepSeen = weather.StepIndex;
+
+            float3 p = transformComponent.GetEntityPosition();
+            return weather.LightningDamageAt(p.xz);
         }
 
         private void OnDied()

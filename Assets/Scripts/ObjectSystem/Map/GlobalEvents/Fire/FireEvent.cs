@@ -12,6 +12,7 @@ namespace TheRavine.Generator
         public float Left;
         public float Total;
         public float Size;
+        public float Wet;
         public int   Slot;
     }
 
@@ -83,7 +84,7 @@ namespace TheRavine.Generator
 
         public void OnRandomTick(in RandomTickEvent e, double now)
         {
-            if (_disposed || _burning.Count >= _rules.maxBurning) return;
+            if (_disposed || _burning.Count >= _rules.maxBurning || !(_rules.ignitionChance > 0f)) return;
 
             float season = FireMath.SeasonFactor(_events.SeasonValue(now), _events.IsWinter(now), _rules.seasonBias);
             if (season <= 0f) return;
@@ -92,7 +93,8 @@ namespace TheRavine.Generator
             int worldZ = ((Position2Int.GetY(e.Chunk) << MapGenerator.RowShift) + (e.Cell >> MapGenerator.RowShift)) << MapGenerator.CellShift;
             long cell = Position2Int.Pack(worldX >> MapGenerator.CellShift, worldZ >> MapGenerator.CellShift);
             if (_burning.ContainsKey(cell)) return;
-            if (RavineRandom.RangeFloat() >= _rules.ignitionChance * season) return;
+            float dry = _events.Weather != null ? 1f - _events.Weather.WetnessAt(CellCenter(cell)) : 1f;
+            if (RavineRandom.RangeFloat() >= _rules.ignitionChance * season * dry) return;
 
             long packed = Position2Int.Pack(worldX, worldZ);
             if (_map.Commands.HasPendingRemove(packed)
@@ -161,6 +163,7 @@ namespace TheRavine.Generator
             foreach (var kv in _burning) _keys.Add(kv.Key);
 
             WorldCommandBuffer commands = _map.Commands;
+            WeatherEvent weather = _events.Weather;
             float4 bounds = EmptyBounds;
             for (int k = 0; k < _keys.Length; k++)
             {
@@ -179,7 +182,19 @@ namespace TheRavine.Generator
                     continue;
                 }
 
-                fire.Left -= step;
+                float2 center = CellCenter(cell);
+                float rain = weather != null ? weather.RainAt(center) : 0f;
+                if (rain > 0f)
+                {
+                    fire.Wet += rain * step;
+                    if (fire.Wet >= FireMath.QuenchNeed(fire.Size, _rules))
+                    {
+                        Extinguish(cell, fire.Slot);
+                        continue;
+                    }
+                }
+
+                fire.Left -= step * FireMath.BurnRate(rain, _rules);
                 if (fire.Left <= 0f)
                 {
                     commands.Push(new WorldCommand
@@ -194,9 +209,8 @@ namespace TheRavine.Generator
                 }
 
                 _burning[cell] = fire;
-                Spread(cell, fire.Size, in sampler);
+                Spread(cell, fire.Size, center, rain, weather, in sampler);
 
-                float2 center = CellCenter(cell);
                 float radius = FireMath.HeatRadius(fire.Size, _rules);
                 bounds.xy = math.min(bounds.xy, center - radius);
                 bounds.zw = math.max(bounds.zw, center + radius);
@@ -219,9 +233,11 @@ namespace TheRavine.Generator
             _burning[moved] = movedFire;
         }
 
-        private void Spread(long cell, float size, in WindSampler sampler)
+        private void Spread(long cell, float size, float2 center, float rain, WeatherEvent weather, in WindSampler sampler)
         {
-            float2 wind = math.normalizesafe(sampler.Sample(CellCenter(cell)));
+            float2 wind = sampler.Sample(center);
+            if (weather != null) wind += weather.WindAt(center);
+            wind = math.normalizesafe(wind);
             float reach = FireMath.SpreadReach(size, _rules);
             int attempts = FireMath.SpreadAttempts(size, _rules);
             int x = Position2Int.GetX(cell);
@@ -245,6 +261,8 @@ namespace TheRavine.Generator
                 float length = math.length(dir);
                 float chance = _rules.spreadChance * FireMath.SpreadFalloff(length, reach)
                              * math.max(0f, 1f + _rules.windBias * math.dot(wind, dir / length));
+                if (weather != null)
+                    chance *= FireMath.RainDamp(rain, weather.WetnessAt(CellCenter(primary)), _rules);
                 if (RavineRandom.RangeFloat() < chance) Ignite(primary, targetSize);
             }
         }

@@ -16,6 +16,7 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 | `ServiceLocator` | `Assets/Scripts/Core/ServiceLocator/ServiceLocator.cs` | `Services` (by type) and `Players` (`PlayerContainer`) |
 | `SimulationClock` | `Assets/Scripts/Core/SimulationClock.cs` | The only source of simulation time |
 | `WorldAuthority` | `Assets/Scripts/Core/WorldAuthority.cs` | `IsAuthority`, `HasRemotePeers` |
+| `SkyCover` | `Assets/Scripts/Core/SkyCover.cs` | Static cloud cover and rain over the camera, written by `WeatherView`; visuals only |
 | `RavineLogger` | `Assets/Scripts/Core/RavineLogger.cs` | Buffered file log; static facade in `Assets/Scripts/Core/RavineLog.cs` |
 | `WorldRegistry` | `Assets/Scripts/Core/Settings/WorldRegistry.cs` | Create / load / unload / delete / rename / save worlds |
 | `AutosaveCoordinator` | `Assets/Scripts/Core/Settings/WorldData/AutosaveCoordinator.cs` | Autosave loop, `SubscribeBeforeSave` hooks |
@@ -72,6 +73,8 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 - `TimeInvoker` (`Assets/Scripts/Core/Timer/TimeInvoker.cs`): DontDestroyOnLoad singleton, per-frame and per-second events, scaled and unscaled.
 - `SyncedTimer` (`Assets/Scripts/Core/Timer/SyncedTimer.cs`): subscribes to `TimeInvoker`, supports pause.
 - `DayCycle` (`Assets/Scripts/Core/DayCycle.cs`): network day / night, server-written; `FogCycle` (`Assets/Scripts/Core/FogCycle.cs`): fog.
+- `DayCycle.ApplyVisuals` multiplies sun intensity by `1 - SkyCover.Value * cloudDim`; `FogCycle.Apply` multiplies density by `1 + SkyCover.Rain * fogBoost`.
+- `DayCycle.NormalizedTime` is read by `WeatherEvent` for the heat of the day (weather: `docs/map/map-events.md`).
 
 ## Input
 
@@ -95,6 +98,7 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 ## Invariants
 
 - Simulation code reads time from `SimulationClock`, never from Unity time.
+- Simulation code never reads `SkyCover`; it is written and read by visuals only.
 - Nothing registers a service by writing into the container directly.
 - `OnDisable` of `Bootstrap` releases services without creating replacements. A repeated release has no effect.
 - `BreakUp` never frees memory that an `Update` of a still-loaded scene object can reach; it stops work and unsubscribes.

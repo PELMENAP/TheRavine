@@ -25,6 +25,19 @@ namespace TheRavine.Generator
         public static float HeatCover(float distance, float radius)
             => radius > 0f ? math.saturate((radius - distance) / (radius * 0.5f)) : 0f;
 
+        public static float QuenchNeed(float size, FireRules r)
+            => r.quenchPerSize * math.pow(math.max(size, 1e-3f), r.quenchSizeExponent);
+
+        public static float RainDamp(float rain, float wetnessTarget, FireRules r)
+        {
+            float limit = math.max(r.wetIgnitionLimit, 1e-3f);
+            if (wetnessTarget >= limit) return 0f;
+            return math.saturate(1f - r.rainSpreadDamp * rain) * (1f - math.max(wetnessTarget, 0f) / limit);
+        }
+
+        public static float BurnRate(float rain, FireRules r)
+            => math.saturate(1f - r.rainSlow * rain);
+
         public static float SeasonFactor(float season, bool winter, float bias)
             => winter ? 0f : math.max(0f, 1f + bias * season);
     }

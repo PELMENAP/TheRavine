@@ -8,11 +8,14 @@ namespace TheRavine.Generator
     {
         public FireRules fire = new();
         public WildWindRules wildWind = new();
+        public WeatherRules weather = new();
 
         private void OnValidate()
         {
             wildWind ??= new WildWindRules();
             wildWind.Validate();
+            weather ??= new WeatherRules();
+            weather.Validate();
             fire ??= new FireRules();
             fire.maxSize = Mathf.Max(fire.maxSize, fire.minSize);
             fire.defaultSize = Mathf.Clamp(fire.defaultSize, fire.minSize, fire.maxSize);
@@ -23,7 +26,7 @@ namespace TheRavine.Generator
     [Serializable]
     public sealed class FireRules
     {
-        [Range(0f, 1f)] public float ignitionChance = 0.002f;
+        [Range(0f, 1f)] public float ignitionChance = 0f;
         public float seasonBias = 0.5f;
         [Min(0.05f)] public float stepInterval = 0.5f;
         [Min(1)] public int maxBurning = 512;
@@ -46,5 +49,12 @@ namespace TheRavine.Generator
         [Min(1f)] public float spreadMaxReach = 6f;
         [Min(0f)] public float spreadAttemptsPerSize = 8f;
         [Min(1)] public int spreadMaxAttempts = 32;
+
+        [Header("Rain")]
+        [Min(0f)] public float quenchPerSize = 1.6f;
+        [Min(0f)] public float quenchSizeExponent = 1.5f;
+        [Range(0f, 1f)] public float rainSpreadDamp = 1f;
+        [Range(0f, 1f)] public float rainSlow = 0.7f;
+        [Range(0.01f, 1f)] public float wetIgnitionLimit = 0.7f;
     }
 }

@@ -828,7 +828,9 @@ namespace TheRavine.Generator
         [SerializeField] private MapEventRules mapEventRules;
         [SerializeField] private FireViewSettings fireView = new();
         [SerializeField] private WildWindViewSettings wildWindView = new();
+        [SerializeField] private WeatherViewSettings weatherView = new();
         [SerializeField, Min(0)] private int debugIgniteRadius = 6;
+        [SerializeField, Min(1f)] private float debugWeatherRadius = 300f;
         [SerializeField, Min(0.1f)] private float nalApplyBudgetMs = 1f;
         [SerializeField, Min(1)] private int chunkRequestCapacity = 32;
         [SerializeField] private ObjectViewMotionSettings objectMotion = new();
@@ -912,7 +914,7 @@ namespace TheRavine.Generator
                     ownsMapEventRules = true;
                     RavineLog.Warning("[MapGenerator] MapEventRules is not assigned, using defaults");
                 }
-                Events = new GlobalMapEvents(this, objectSystem.infoRegistry, randomTicks, mapEventRules, fireView, wildWindView);
+                Events = new GlobalMapEvents(this, objectSystem.infoRegistry, randomTicks, mapEventRules, fireView, wildWindView, weatherView);
             }
 
             SetupEndless();
@@ -1336,6 +1338,25 @@ namespace TheRavine.Generator
             for (int dx = -debugIgniteRadius; dx <= debugIgniteRadius && lit < 5; dx++)
                 if (fire.TryIgnite(Position2Int.Pack(cx + dx, cz + dz))) lit++;
             RavineLog.Warning($"[MapGenerator] Ignited {lit} objects near the viewer");
+        }
+
+        [ContextMenu("Spawn Rain Near Viewer")]
+        private void SpawnRainNearViewer() => SpawnWeatherNearViewer(0.8f, 0f, "rain");
+
+        [ContextMenu("Spawn Thunderstorm Near Viewer")]
+        private void SpawnThunderstormNearViewer() => SpawnWeatherNearViewer(0.9f, 0.9f, "thunderstorm");
+
+        [ContextMenu("Spawn Dry Thunderstorm Near Viewer")]
+        private void SpawnDryThunderstormNearViewer() => SpawnWeatherNearViewer(0.1f, 0.9f, "dry thunderstorm");
+
+        private void SpawnWeatherNearViewer(float moisture, float charge, string label)
+        {
+            WeatherEvent weather = Events?.Weather;
+            if (weather == null || viewer == null || !WorldAuthority.IsAuthority) return;
+
+            Vector3 p = viewer.position;
+            bool spawned = weather.Spawn(new float2(p.x, p.z), moisture, charge, debugWeatherRadius, weather.Rules.lifeMax);
+            RavineLog.Warning($"[MapGenerator] Spawn {label} near the viewer: {(spawned ? "ok" : "no free cell")}");
         }
 
         private void OnDestroy()
