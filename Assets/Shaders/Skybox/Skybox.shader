@@ -2,39 +2,6 @@
 {
     Properties 
     {
-        _NoiseTex ("Noise", 2D) = "black" {}
-        _HazeColor ("Color", Color) = (1,1,1,1)
-        _HazeScale ("Scale", Range(0,1)) = 0.2
-        _HazeThreshold("Threshold", Range(0,1)) = 0
-        _HazeIntensity("Intensity", Float) = 1.0
-        _HazeRotationAxis("Rotation Axis", Vector) = (0.0,-1.0,0.0)
-        _HazeRotationSpeed("Rotation Speed", Float) = 0.2
-
-        [Space(20)]
-        [NoScaleOffset] _Tex1 ("Cubemap", Cube) = "black" {}
-        _AlphaLayer1 ("Alpha", Range(0,1)) = 1.0
-        _HShiftLayer1 ("Horizontal Shift", Range(-7, 7)) = 0
-        _RotationSpeed1 ("Horizontal Speed", Float) = 0.05
-        _VShiftLayer1 ("Vertical Shift", Range(-0.5,0.25)) = 0
-        _PhaseLayer1 ("Vertical Motion", Range(-0.1,0.1)) = 0.01
-
-        [Space(20)]
-        [NoScaleOffset] _Tex2 ("Cubemap", Cube) = "black" {}
-        _AlphaLayer2 ("Alpha", Range(0,1)) = 1.0
-        _HShiftLayer2 ("Horizontal Shift", Range(-7, 7)) = 0
-        _RotationSpeed2 ("Horizontal Speed", Float) = 0.08
-        _VShiftLayer2 ("Vertical Shift", Range(-0.5,0.25)) = 0
-        _PhaseLayer2 ("Vertical Motion", Range(-0.1,0.1)) = -0.015
-
-        [Space(20)]
-        [NoScaleOffset] _Tex3 ("Cubemap", Cube) = "black" {}
-        _AlphaLayer3 ("Alpha", Range(0,1)) = 1.0
-        _HShiftLayer3 ("Horizontal Shift", Range(-7, 7)) = 0
-        _RotationSpeed3 ("Horizontal Speed", Float) = 0.11
-        _VShiftLayer3 ("Vertical Shift", Range(-0.5,0.25)) = 0
-        _PhaseLayer3 ("Vertical Motion", Range(-0.1,0.1)) = 0.02
-
-        [Space(20)]
         [Header(Sun Properties)]
         _SunColor ("Sun Tint", Color) = (1,0.9568,0.8392)
         _SunSize ("Sun Size", Range(0,1)) = 0.15
@@ -46,7 +13,6 @@
         [Space(20)]
         [Header(Night and Moon Properties)]
         _MoonDirection("Moon Direction", Vector) = (0,0,0,0)
-        [NoScaleOffset] _MoonTex ("Moon Texture", 2D) = "black" {}
         _MoonSize ("Moon Size Factor", Float) = 5
         _MoonFlare("Moon Flare", Range(0, 1.0)) = 0.03
         _StarSize ("Star Size", Range(10,1000)) = 200
@@ -96,21 +62,6 @@
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
-                half _AlphaLayer1;
-                half _AlphaLayer2;
-                half _AlphaLayer3;
-                float _RotationSpeed1;
-                float _RotationSpeed2;
-                float _RotationSpeed3;
-                float _VShiftLayer1;
-                float _VShiftLayer2;
-                float _VShiftLayer3;
-                float _PhaseLayer1;
-                float _PhaseLayer2;
-                float _PhaseLayer3;
-                float _HShiftLayer1;
-                float _HShiftLayer2;
-                float _HShiftLayer3;
                 half3 _SkyTint;
                 half3 _SkyTintUpward;
                 half3 _SkyNightColor;
@@ -141,52 +92,20 @@
                 float4 _MoonDirection;
                 float _MoonSize;
                 half _MoonFlare;
-                half _HazeScale;
-                half4 _HazeColor;
-                half _HazeIntensity;
-                half _HazeThreshold;
-                float3 _HazeRotationAxis;
-                float _HazeRotationSpeed;
             CBUFFER_END
 
             float _LightningFlash;
 
-            TEXTURECUBE(_Tex1); SAMPLER(sampler_Tex1);
-            TEXTURECUBE(_Tex2); SAMPLER(sampler_Tex2);
-            TEXTURECUBE(_Tex3); SAMPLER(sampler_Tex3);
-            TEXTURE2D(_MoonTex); SAMPLER(sampler_MoonTex);
-            TEXTURE2D(_NoiseTex); SAMPLER(sampler_NoiseTex);
-
             struct appdata 
             {
                 float4 vertex : POSITION;
-                float2 texcoord : TEXCOORD0;
             };
 
             struct v2f 
             {
                 float4 pos : SV_POSITION;
-                float3 uvLayer1: TEXCOORD0;
-                float3 uvLayer2: TEXCOORD1;
-                float3 uvLayer3: TEXCOORD2;
-                float3 ray : TEXCOORD4;
-                float3 hazeRay : TEXCOORD6;
-
+                float3 ray : TEXCOORD0;
             };
-
-            float3 RotateAroundY(float3 v, float angle) 
-            {
-                float s, c;
-                sincos(angle, s, c);
-                return float3(v.x * c - v.z * s, v.y, v.x * s + v.z * c);
-            }
-
-            float3 RotateAroundAxis(float3 v, float3 axis, float angle) 
-            {
-                float s, c;
-                sincos(angle, s, c);
-                return v * c + cross(axis, v) * s + axis * dot(axis, v) * (1.0 - c);
-            }
 
             float hash13(float3 p)
             {
@@ -230,31 +149,11 @@
             }
 
 
-            inline half3 BlendClouds(half3 color, TextureCube cube, SamplerState samplerState, float3 uv, half alpha, half3 skyColor) 
-            {
-                half4 tex = SAMPLE_TEXTURECUBE(cube, samplerState, uv);
-                tex.rgb *= skyColor;
-                tex.a *= alpha;
-                return lerp(color, tex.rgb, tex.a);
-            }
-
             v2f vert (appdata v) 
             {
                 v2f o;
                 o.pos = TransformObjectToHClip(v.vertex.xyz);
                 o.ray = v.vertex.xyz;
-                
-				o.uvLayer1 = RotateAroundY(v.vertex.xyz, _Time.x * _RotationSpeed1 + _HShiftLayer1);
-				o.uvLayer1.y += _SinTime.x * _PhaseLayer1 - _VShiftLayer1;
-
-				o.uvLayer2 = RotateAroundY(v.vertex.xyz, _Time.x * _RotationSpeed2 + _HShiftLayer2);
-				o.uvLayer2.y += _SinTime.x * _PhaseLayer2 - _VShiftLayer2;
-
-				o.uvLayer3 = RotateAroundY(v.vertex.xyz, _Time.x * _RotationSpeed3 + _HShiftLayer3);
-				o.uvLayer3.y += _SinTime.x * _PhaseLayer3 - _VShiftLayer3;
-                
-                o.hazeRay = RotateAroundAxis(v.vertex.xyz, _HazeRotationAxis, _Time.x * _HazeRotationSpeed);
-
                 return o;
             }
 
@@ -295,7 +194,6 @@
                 half fog = saturate(exp(_FogPower * (-y / _FogHeight + _FogBaseHeight)) * _FogAmount + _FogMinAmount);
                 fog *= _FogAlpha;
 
-                float hy = abs(sunDir.y) + abs(y);
                 half t = saturate((0.25 - sunDir.y) * 4.0);
 				half3 sunsetColor = half3(1.0, 0.45, 0.15);
 
@@ -347,10 +245,12 @@
 
 					if (moonDistSq < 0.3) 
 					{
-						moonColor = (half3)moonFlare;
-						float2 moonUV = DirectionalOffset(ray, moonDir);
-						half3 moonTex = SAMPLE_TEXTURE2D_LOD(_MoonTex, sampler_MoonTex, moonUV * _MoonSize + 0.5, 0).rgb;
-						moonColor += moonTex;
+                        float2 moonUV = DirectionalOffset(ray, moonDir) * abs(_MoonSize) * 2.0;
+                        float radius = length(moonUV);
+                        float edge = max(fwidth(radius), 1e-3);
+                        float disc = 1.0 - smoothstep(1.0 - edge, 1.0 + edge, radius);
+                        float limb = sqrt(saturate(1.0 - dot(moonUV, moonUV)));
+                        moonColor = moonFlare + half3(0.8, 0.86, 0.95) * (disc * lerp(0.55, 1.0, limb));
 						sunColor = (half3)0.0;
 					}
 
@@ -376,24 +276,6 @@
                 half3 skyTint = half3(1.0, 1.0, 1.0 - t);
                 skyTint = lerp(_NightTintColor, skyTint, dayBlend);
                 
-				float3 hazeRay = normalize(i.hazeRay);
-				float3 hazeUV = hazeRay * _HazeScale;
-				half n1 = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, hazeUV.zy).r;
-				half n2 = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, hazeUV.xz).r;
-				half n3 = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, hazeUV.xy).r;
-				float3 triW = abs(hazeRay);
-				float invSum = rcp(triW.x + triW.y + triW.z);
-				float3 weights = triW * invSum;
-				half haze = dot(half3(n1, n2, n3), weights);
-				haze = saturate(haze * _HazeIntensity - _HazeThreshold);
-				half3 hazeColor = _HazeColor.rgb;
-				haze *= _HazeColor.a;
-				col = lerp(col, hazeColor * skyTint, haze);
-
-                if(_AlphaLayer1 > 0) col = BlendClouds(col, _Tex1, sampler_Tex1, i.uvLayer1, _AlphaLayer1, skyTint);
-                if(_AlphaLayer2 > 0) col = BlendClouds(col, _Tex2, sampler_Tex2, i.uvLayer2, _AlphaLayer2, skyTint);
-				if(_AlphaLayer3 > 0) col = BlendClouds(col, _Tex3, sampler_Tex3, i.uvLayer3, _AlphaLayer3, skyTint);
-
                 half3 fogColor = _FogColor;
                 half3 fogSkyTint = lerp(1.0, skyTint, _FogDaylightInfluence);
                 col = lerp(col, fogColor * fogSkyTint, fog);

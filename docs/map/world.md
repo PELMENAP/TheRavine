@@ -49,6 +49,8 @@ Camera rings and rendering: `docs/map/world-camera.md`.
 
 - `EndlessTerrain`: central window mesh with collider and a pool of block meshes for the blocks of the current view sector.
 - `EndlessLiquids`: LOD water blocks on the same blocks, index-based edge stitching against a coarser neighbour on any world side.
+  - Water surface uses scene depth, environment reflections and alpha blending.
+  - `WaterUnderwaterFeature` owns caustics and underwater post-processing in the High Fidelity renderer.
 - `EndlessObjects`: reuses object instances through `ObjectSystem`.
 - `EndlessObjects` animates only an existing view whose `ChunkData.Version` changed; streaming a new view never animates.
 - `ObjectViewMotion` (`Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/ObjectViewMotion.cs`): LitMotion slots, fixed budget; over budget a change is instant.
