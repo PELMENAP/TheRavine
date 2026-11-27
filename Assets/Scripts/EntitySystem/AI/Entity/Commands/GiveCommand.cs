@@ -85,7 +85,7 @@ public class GiveCommand : EntityCommand
         }
         else model.Colony?.Stats.RecordInteraction(ColonyStats.Interaction.FeedEmpty);
         float rest  = delivered - given;
-        if (rest > 0f) model.Digestion.Ingest(rest);
+        if (rest > 0f) model.Carry(SocialReliefMath.ReturnToGiver(model.Digestion, rest));
         if (troph && model.Nest != null)
             model.Nest.RelieveHunger(given / math.max(r.NestStorageNorm, 1e-3f) * r.TrophallaxisHungerRelief);
         model.Infection?.TryTransmitGift(model, victim);

@@ -2,19 +2,19 @@ using UnityEngine;
 
 public sealed partial class SimulationRules
 {
-    [SerializeField] private bool knowledgeEnabled;
-    [SerializeField] private float knowledgeObserveInterval = 5f;
-    [SerializeField] private float knowledgeSearchInterval = 2f;
-    [SerializeField] private float knowledgeNodeCost = 2f;
-    [SerializeField] private float knowledgeNoiseFloor = 0.01f;
-    [SerializeField] private float knowledgeMinGain = 1f;
-    [SerializeField] private float knowledgeRewardScale = 0.05f;
-    [SerializeField] private float knowledgeRewardCap = 0.2f;
-    [SerializeField] private float knowledgeTeachChance = 0.05f;
-    [SerializeField] private float knowledgeTeachRadius = 4f;
-    [SerializeField] private float knowledgeCopyError = 0.2f;
-    [SerializeField] private float knowledgeTargetScale = 100f;
-    [SerializeField] private float knowledgeConstScale = 0.5f;
+    [SerializeField, FrameField] private bool knowledgeEnabled;
+    [SerializeField, FrameField] private float knowledgeObserveInterval = 5f;
+    [SerializeField, FrameField] private float knowledgeSearchInterval = 2f;
+    [SerializeField, FrameField] private float knowledgeNodeCost = 2f;
+    [SerializeField, FrameField] private float knowledgeNoiseFloor = 0.01f;
+    [SerializeField, FrameField] private float knowledgeMinGain = 1f;
+    [SerializeField, FrameField] private float knowledgeRewardScale = 0.05f;
+    [SerializeField, FrameField] private float knowledgeRewardCap = 0.2f;
+    [SerializeField, FrameField] private float knowledgeTeachChance = 0.05f;
+    [SerializeField, FrameField] private float knowledgeTeachRadius = 4f;
+    [SerializeField, FrameField] private float knowledgeCopyError = 0.2f;
+    [SerializeField, FrameField] private float knowledgeTargetScale = 100f;
+    [SerializeField, FrameField] private float knowledgeConstScale = 0.5f;
 
     public bool KnowledgeEnabled => knowledgeEnabled;
 

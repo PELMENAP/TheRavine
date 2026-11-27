@@ -31,6 +31,7 @@ The file is `simulation_log_<yyyyMMdd_HHmmss>.csv` in `Application.persistentDat
 | `deaths_age` | both | creatures | Δ `DeathsByCause[Age]` |
 | `deaths_burn` | both | creatures | Δ `DeathsByCause[Burn]` |
 | `deaths_wind` | both | creatures | Δ `DeathsByCause[Wind]` |
+| `deaths_lightning` | both | creatures | Δ `DeathsByCause[Lightning]` |
 | `mean_lifespan_s` | both | s | Δ `LifespanSum` / Δ `Died` over the window; 0 when nobody died |
 | `<action>_started` | both | commands | Δ `ActionsStarted[action]`, counted in `EntityCommandRunner.Start` |
 | `<action>_completed` | both | commands | Δ `ActionsCompleted[action]`, counted in `EntityCommandRunner.Finish` with status `Completed` |

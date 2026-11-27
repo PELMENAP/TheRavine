@@ -169,4 +169,28 @@ public class SocialReliefTests
         Assert.AreEqual(0, PlanCatalog.EntryMask(PlanKind.Court, PlanHint.None) & give);
         Assert.AreNotEqual(0, PlanCatalog.EntryMask(PlanKind.Court, PlanHint.KinStressed) & give);
     }
+
+    [Test]
+    public void RemainderThatDoesNotFitTheGiversStomachIsReturnedNotLost()
+    {
+        var stomach = new DigestionComponent();
+        stomach.Configure(5f);
+
+        float overflow = SocialReliefMath.ReturnToGiver(stomach, 10f);
+        Assert.AreEqual(5f, stomach.Stomach, 1e-6f);
+        Assert.AreEqual(5f, overflow, 1e-6f);
+        Assert.AreEqual(10f, stomach.Stomach + overflow, 1e-6f);
+
+        Assert.AreEqual(7f, SocialReliefMath.ReturnToGiver(stomach, 7f), 1e-6f);
+        Assert.AreEqual(0f, SocialReliefMath.ReturnToGiver(stomach, 0f));
+    }
+
+    [Test]
+    public void RemainderThatFitsLeavesNothingToCarry()
+    {
+        var stomach = new DigestionComponent();
+        stomach.Configure(20f);
+        Assert.AreEqual(0f, SocialReliefMath.ReturnToGiver(stomach, 12f), 1e-6f);
+        Assert.AreEqual(12f, stomach.Stomach, 1e-6f);
+    }
 }

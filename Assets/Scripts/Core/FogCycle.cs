@@ -28,6 +28,9 @@ namespace TheRavine.Base
         [SerializeField, Range(0f, 1f)] private float appearStartHeight = 0.2f;
         [SerializeField, Min(0.01f)] private float multiplierSmoothTime = 20f;
 
+        [Header("Weather")]
+        [SerializeField, Min(0f)] private float fogBoost = 1.5f;
+
         private CancellationTokenSource cts;
         private CancellationTokenSource fadeCts;
         private readonly CompositeDisposable subscriptions = new();
@@ -135,7 +138,7 @@ namespace TheRavine.Base
 
             float ease = appear * appear * (3f - 2f * appear);
 
-            float density = densityCurve.Evaluate(normalizedTime) * shownDensityMultiplier * currentVisibility * ease;
+            float density = densityCurve.Evaluate(normalizedTime) * shownDensityMultiplier * currentVisibility * ease * (1f + SkyCover.Rain * fogBoost);
             float heightLength = heightMaskLengthCurve.Evaluate(normalizedTime) * shownHeightMaskLengthMultiplier * Mathf.Lerp(appearStartHeight, 1f, ease);
 
             fogMaterial.SetFloat(DensityId, density);

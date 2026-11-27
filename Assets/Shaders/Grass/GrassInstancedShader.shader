@@ -64,6 +64,7 @@ Shader "The Ravine/ChunkGrassShader"
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+        #include "Assets/Shaders/Effects/WeatherCommon.hlsl"
 
         struct InstanceData
         {
@@ -467,10 +468,11 @@ Shader "The Ravine/ChunkGrassShader"
 
                 Light mainLight = GetMainLight(input.shadowCoord);
                 float NdotL = saturate(dot(normalWS, mainLight.direction));
-                float3 directLighting = mainLight.color * NdotL * mainLight.shadowAttenuation;
+                float cloudShade = WeatherCloudShade(input.positionWS);
+                float3 directLighting = mainLight.color * NdotL * mainLight.shadowAttenuation * cloudShade;
 
                 float backLighting = saturate(dot(-mainLight.direction, normalWS));
-                float3 translucency = mainLight.color * backLighting * _TranslucencyStrength * input.heightFactor * mainLight.shadowAttenuation;
+                float3 translucency = mainLight.color * backLighting * _TranslucencyStrength * input.heightFactor * mainLight.shadowAttenuation * cloudShade;
 
                 float3 ambientLighting = SampleSH(normalWS) * _AmbientStrength;
                 float3 lighting = directLighting + translucency + ambientLighting;

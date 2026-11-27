@@ -2,7 +2,7 @@ using UnityEngine;
 
 public sealed partial class SimulationRules
 {
-    [SerializeField] private float comfortMinStress = 0.25f;
+    [SerializeField, FrameField] private float comfortMinStress = 0.25f;
     [SerializeField] private float comfortRelief = 0.5f;
     [SerializeField] private float comfortSelfShare = 0.3f;
     [SerializeField] private float comfortEnergyCost = 2f;

@@ -21,6 +21,12 @@ public static class SocialReliefMath
         lost = portion * loss;
         return portion - lost;
     }
+
+    public static float ReturnToGiver(DigestionComponent stomach, float rest)
+    {
+        if (!(rest > 0f)) return 0f;
+        return rest - stomach.Ingest(rest);
+    }
 }
 
 public static class SocialRelief

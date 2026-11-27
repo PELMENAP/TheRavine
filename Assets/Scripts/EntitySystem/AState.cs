@@ -8,7 +8,7 @@ public abstract class AState : IDisposable
 {
     protected CommandScheduler _commandProcessor = new CommandScheduler();
 
-    public void AddCommand(ICommand command)
+    public void AddCommand(IScheduledCommand command)
     {
         _commandProcessor.AddCommand(command);
     }

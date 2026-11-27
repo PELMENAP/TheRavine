@@ -1,0 +1,53 @@
+name: unity-tests
+
+on:
+  push:
+    branches:
+      - "claude/**"
+  workflow_dispatch:
+
+concurrency:
+  group: unity-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  editmode:
+    runs-on: ubuntu-latest
+    env:
+      UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+      UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+    steps:
+      - name: Unity license is configured
+        id: license
+        run: |
+          if [ -z "$UNITY_LICENSE" ]; then
+            echo "::notice title=unity-tests skipped::Secret UNITY_LICENSE is absent; compile and EditMode tests were not run."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.license.outputs.present == 'true'
+      - uses: actions/cache@v4
+        if: steps.license.outputs.present == 'true'
+        with:
+          path: Library
+          key: Library-${{ hashFiles('ProjectSettings/ProjectVersion.txt', 'Packages/manifest.json', 'Packages/packages-lock.json') }}
+          restore-keys: |
+            Library-
+      - name: Compile and run EditMode tests
+        if: steps.license.outputs.present == 'true'
+        uses: game-ci/unity-test-runner@v4.3.1
+        with:
+          unityVersion: 6000.3.28f1
+          projectPath: .
+          testMode: editmode
+          artifactsPath: editmode-results
+      - name: Upload test results
+        if: always() && steps.license.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: editmode-results
+          path: editmode-results
+          if-no-files-found: warn

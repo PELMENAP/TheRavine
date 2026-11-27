@@ -9,6 +9,7 @@ public enum DeathCause : byte
     Age     = 4,
     Burn    = 5,
     Wind    = 6,
+    Lightning = 7,
 }
 
 public class MortalityComponent : IComponent

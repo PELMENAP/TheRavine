@@ -19,6 +19,7 @@ namespace TheRavine.Base
         [SerializeField] private AnimationCurve nightBlendCurve;
         [SerializeField] private Transform secondSun;
         [SerializeField] private Material skyboxMaterial;
+        [SerializeField, Range(0f, 1f)] private float cloudDim = 0.6f;
         private readonly static int nightBlendId = Shader.PropertyToID("_NightBlend");
         [SerializeField] private int awakeDelay = 1000;
         [SerializeField, Min(0.1f)] private float environmentUpdateInterval = 1.5f;
@@ -57,6 +58,7 @@ namespace TheRavine.Base
         {
             if (disposed) return;
             disposed = true;
+            WorldDayPhase.Clear();
 
             serverTime?.Dispose();
             isDay?.Dispose();
@@ -100,6 +102,7 @@ namespace TheRavine.Base
 
                     localTime = Mathf.Repeat(localTime + diff * Mathf.Min(dt * 5f, 1f), 1f);
                     normalizedTime.Value = localTime;
+                    WorldDayPhase.Value = localTime;
 
                     bool nowDay = localTime >= DayConstants.DayStart && localTime <= DayConstants.DayEnd;
                     isDay.Value = nowDay;
@@ -119,7 +122,7 @@ namespace TheRavine.Base
             secondSun.localRotation = Quaternion.Euler(xAngle - 180f, 0, 0);
 
             sun.color = sunGradient.Evaluate(t);
-            sun.intensity = intensityCurve.Evaluate(t);
+            sun.intensity = intensityCurve.Evaluate(t) * (1f - SkyCover.Value * cloudDim);
 
             skyboxMaterial.SetFloat(
                 nightBlendId,

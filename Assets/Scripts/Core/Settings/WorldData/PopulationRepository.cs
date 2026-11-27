@@ -47,6 +47,18 @@ namespace TheRavine.Base
 
         public static PopulationSnapshot Read(Stream stream, int seed, long created)
         {
+            try
+            {
+                return ReadRecords(stream, seed, created);
+            }
+            catch (EndOfStreamException)
+            {
+                throw new InvalidDataException("truncated data");
+            }
+        }
+
+        private static PopulationSnapshot ReadRecords(Stream stream, int seed, long created)
+        {
             Require(stream.Length >= HeaderBytes && stream.Length <= HeaderBytes + ColonyBytes * MaxColonies + AgentBytes * MaxAgents, "invalid file size");
             using var r = new BinaryReader(stream, System.Text.Encoding.UTF8, true);
             Require(r.ReadUInt32() == Magic, "unknown format or version");

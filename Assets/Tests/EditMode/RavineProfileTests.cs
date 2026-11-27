@@ -54,7 +54,7 @@ public class RavineProfileTests
             Assert.IsTrue(RavineProfile.IsWall(p.Blend(z)));
             float dz = 2f;
             Assert.AreEqual(slope, (p.Elevation(z + dz) - p.Elevation(z)) / dz, 0.05f);
-            Assert.AreEqual(-slope, (p.Elevation(-z - dz) - p.Elevation(-z)) / dz, 0.05f);
+            Assert.AreEqual(-slope, (p.Elevation(-z + dz) - p.Elevation(-z)) / dz, 0.05f);
         }
     }
 

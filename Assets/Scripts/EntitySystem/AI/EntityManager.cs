@@ -69,6 +69,8 @@ public partial class EntityManager : MonoBehaviour
     private int _fireStepSeen = -1;
     private WildWindEvent _wind;
     private int _windStepSeen = -1;
+    private WeatherEvent _weather;
+    private int _weatherStepSeen = -1;
 
     [Header("Nest views")]
     [SerializeField] private bool showNestViews = true;
@@ -255,6 +257,7 @@ public partial class EntityManager : MonoBehaviour
             }
             ApplyFireHeat();
             ApplyWildWind();
+            ApplyLightning();
         }
 
         _speech.Flush(_grid, SimulationClock.TimeD);
@@ -349,6 +352,31 @@ public partial class EntityManager : MonoBehaviour
             wind.ReportCreature(p);
             float damage = wind.DamageAt(p) * step;
             if (damage > 0f) e.TakeDamage(damage, null, DeathCause.Wind);
+        }
+    }
+
+    private void ApplyLightning()
+    {
+        WeatherEvent weather = _weather;
+        if (weather == null || weather.IsDisposed || weather.StepIndex == _weatherStepSeen) return;
+        _weatherStepSeen = weather.StepIndex;
+        if (weather.StepGroundStrikes == 0) return;
+
+        float sense = SimulationRules.Frame.FireSenseRadius * MapGenerator.scale;
+        float4 bounds = weather.StrikeBounds;
+        float4 reach = new float4(bounds.x - sense, bounds.y - sense, bounds.z + sense, bounds.w + sense);
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            EntityModel e = _entities[i];
+            if (e.IsDisposed || e.IsDeathPending) continue;
+
+            float2 p = e.Position2D;
+            if (p.x < reach.x || p.y < reach.y || p.x > reach.z || p.y > reach.w) continue;
+            if (sense > 0f && weather.TryFindNearestStrike(p, sense, out float2 source, out float distance))
+                e.ReportHazard(source, 1f - distance / sense);
+
+            float damage = weather.LightningDamageAt(p);
+            if (damage > 0f) e.TakeDamage(damage, null, DeathCause.Lightning);
         }
     }
 
@@ -707,6 +735,7 @@ public partial class EntityManager : MonoBehaviour
             map.Events.Season = SeasonClockSource.Instance;
             _fire = map.Events.Fire;
             _wind = map.Events.Wind;
+            _weather = map.Events.Weather;
         }
 
         if (!TheRavine.Base.WorldAuthority.IsAuthority || !isActiveAndEnabled) return;
@@ -1398,6 +1427,7 @@ public partial class EntityManager : MonoBehaviour
         _nestViews.Clear();
         _fire = null;
         _wind = null;
+        _weather = null;
         _infection?.Dispose();
         _population?.FlushDeferredDisposals();
         _population = null;

@@ -1,6 +1,6 @@
 # Player and networking
 
-Root: `Assets/Scripts/EntitySystem/Entityes/Player/`, `Assets/Scripts/GameSceneManagerSystem/`.
+Root: `Assets/Scripts/EntitySystem/Entities/Player/`, `Assets/Scripts/GameSceneManagerSystem/`.
 Assembly: `EntitySystem`; the connection classes are in `Assembly-CSharp`.
 Tests: `Assets/Tests/EditMode/RateBudgetTests.cs`, `Assets/Tests/EditMode/JumpChargeLimitTests.cs`, `Assets/Tests/EditMode/PlayerSkillGraphTests.cs`.
 
@@ -12,17 +12,17 @@ Open security findings: `docs/audit/security_audit.md`.
 | Type | File | Role |
 |---|---|---|
 | `AgentSnapshotStream` | `Assets/Scripts/EntitySystem/AI/Population/AgentSnapshotStream.cs` | Server: agents by area of interest to every remote client |
-| `PlayerController` | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | All player RPCs, server movement integration, world edits |
-| `PlayerModelView` | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerModelView.cs` | Player view model; `OnNetworkSpawn` initialisation; camera request |
-| `PlayerEntity` | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerEntity.cs` | Player entity; metabolism on the authority; `ApplyServerVitals` on clients |
-| `PlayerItemLedger` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/PlayerItemLedger.cs` | Server-side item ledger of a remote player (session only) |
-| `RateBudget` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/RateBudget.cs` | GCRA rate limit per player |
-| `JumpChargeLimit` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/JumpChargeLimit.cs` | Caps a jump charge by server time |
-| `PlayerSkillGraph` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/PlayerSkillGraph.cs` | Skill graph of the player: store of capacity 1, own topology, commands, replication packets, save |
-| `PlayerStamina` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/PlayerStamina.cs` | Stamina integration |
-| `TerrainPhysicsResolver` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/TerrainPhysicsResolver.cs` | Terrain contact for the player body |
-| `PCController` | `Assets/Scripts/EntitySystem/Entityes/Player/PCController.cs` | Mouse and keyboard `IController` |
-| `JoistickController` | `Assets/Scripts/EntitySystem/Entityes/Player/Joystick Pack/JoistickController.cs` | Touch `IController` |
+| `PlayerController` | `Assets/Scripts/EntitySystem/Entities/Player/PlayerController.cs` | All player RPCs, server movement integration, world edits |
+| `PlayerModelView` | `Assets/Scripts/EntitySystem/Entities/Player/PlayerModelView.cs` | Player view model; `OnNetworkSpawn` initialisation; camera request |
+| `PlayerEntity` | `Assets/Scripts/EntitySystem/Entities/Player/PlayerEntity.cs` | Player entity; metabolism on the authority; `ApplyServerVitals` on clients |
+| `PlayerItemLedger` | `Assets/Scripts/EntitySystem/Entities/Player/Components/PlayerItemLedger.cs` | Server-side item ledger of a remote player (session only) |
+| `RateBudget` | `Assets/Scripts/EntitySystem/Entities/Player/Components/RateBudget.cs` | GCRA rate limit per player |
+| `JumpChargeLimit` | `Assets/Scripts/EntitySystem/Entities/Player/Components/JumpChargeLimit.cs` | Caps a jump charge by server time |
+| `PlayerSkillGraph` | `Assets/Scripts/EntitySystem/Entities/Player/Components/PlayerSkillGraph.cs` | Player skill graph: store of capacity 1, own topology, commands, replication packets, save |
+| `PlayerStamina` | `Assets/Scripts/EntitySystem/Entities/Player/Components/PlayerStamina.cs` | Stamina integration |
+| `TerrainPhysicsResolver` | `Assets/Scripts/EntitySystem/Entities/Player/Components/TerrainPhysicsResolver.cs` | Terrain contact for the player body |
+| `PCController` | `Assets/Scripts/EntitySystem/Entities/Player/PCController.cs` | Mouse and keyboard `IController` |
+| `JoistickController` | `Assets/Scripts/EntitySystem/Entities/Player/JoystickPack/JoistickController.cs` | Touch `IController` |
 | `CameraInputController` | `Assets/Scripts/EntitySystem/CameraInputController.cs` | Camera zoom and 90° turns |
 | `NetworkConnectionManager` | `Assets/Scripts/GameSceneManagerSystem/NetworkConnectionManager.cs` | Starts host / server / client |
 | `NetworkTransportConfig` | `Assets/Scripts/GameSceneManagerSystem/NetworkTransportConfig.cs` | Transport settings |
@@ -35,7 +35,8 @@ Open security findings: `docs/audit/security_audit.md`.
 
 - Agents are not `NetworkObject`s (`EntityManager.snapshotStream`): the server sends each remote client the agents inside `snapshotRadius` of its player.
 - `AgentSnapshotStream` (server, `Assets/Scripts/EntitySystem/AI/Population/AgentSnapshotStream.cs`): named message `ravine.agents`, unreliable sequenced, at most 64 agents of 12 bytes each.
-- `AgentSnapshotCodec` v2 uses a 22-byte header with a 32-bit lifetime in milliseconds; `AgentPuppets` (client) validates every message, keeps a bounded pool of bodies and removes a body when its time to live passes.
+- `AgentSnapshotCodec` v2 uses a 22-byte header with a 32-bit lifetime in milliseconds;
+  `AgentPuppets` (client) validates every message, keeps a bounded pool of bodies and removes a body when its time to live passes.
 - The host sees the real bodies. Clients send nothing: the area of interest is taken from the server's own position of the player.
 
 ## Data flow
@@ -73,16 +74,19 @@ Open security findings: `docs/audit/security_audit.md`.
 
 - `PlayerEntity` ticks in `EntitySystem.FixedUpdate`: every player on the server, only its own on a client.
 - Metabolism runs only where `WorldAuthority.IsAuthority`; behaviour runs only for the owner.
-- Player behaviours: `Assets/Scripts/EntitySystem/Entityes/Player/PlayerBehaviours/`.
+- Player behaviours: `Assets/Scripts/EntitySystem/Entities/Player/PlayerBehaviours/`.
 
 ## Camera
 
 - One camera per owner, requested through `PlayerModelView.RequestCameraServerRpc`; a repeated request is ignored.
-- `CameraComponent` exists only for the local player and is the only writer of `ViewOrientation`: yaw, pitch and distance, a rigid orbit around a smoothed pivot (player plus `AimAddition`), never below the terrain.
+- `CameraComponent` exists only for the local player and is the only writer of `ViewOrientation`:
+  yaw, pitch and distance, a rigid orbit around a smoothed pivot (player plus `AimAddition`), never below the terrain.
 - The mouse wheel changes only the camera distance (`CameraInputController`); `WheelCaptured` and `ConsumeWheelStep` serve the aim level.
-- Dragging the left button (on mobile a single touch that did not start on the joystick) inside the central square of 0.9 of the short screen side turns the view; a press over UI is not a drag. The rules are in `ViewDragGesture` and are tested.
+- Dragging the left button (on mobile a single touch that did not start on the joystick) inside the central square of 0.9 of the short screen side turns the view; a press over UI is not a drag.
+  The rules are in `ViewDragGesture` and are tested.
 - A press that stays within `CameraDragThresholdPixels` is a click: `ViewClick` on release triggers `PlayerController.AimPlace`; a drag suppresses it.
-- Tuning is in `SimulationRules`: `CameraYawDegreesPerSide`, `CameraPitchDegreesPerSide`, `CameraPitchMin`, `CameraPitchMax`, `CameraDistanceMax`, `CameraDistanceMin`, `CameraTerrainClearance`, `CameraPivotHeight` (height of the look-at point above the player), `CameraInvertDragYaw`, `CameraInvertDragPitch`.
+- Tuning is in `SimulationRules`: `CameraYawDegreesPerSide`, `CameraPitchDegreesPerSide`, `CameraPitchMin`, `CameraPitchMax`, `CameraDistanceMax`, `CameraDistanceMin`,
+  `CameraTerrainClearance`, `CameraPivotHeight` (height of the look-at point above the player), `CameraInvertDragYaw`, `CameraInvertDragPitch`.
 - Movement goes to the server as a world vector (`ViewOrientation.ToWorld` on the client); the server does not know the view.
 - What the view changes in the world: `docs/map/world.md`, section Camera view.
 

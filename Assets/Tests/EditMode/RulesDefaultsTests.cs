@@ -208,8 +208,13 @@ public class RulesDefaultsTests
         Assert.IsFalse(r.SheltersEnabled);
         Assert.IsFalse(r.MaskStressInput);
         Assert.IsFalse(r.MaskTaskSignal);
+        Assert.IsFalse(r.StressContagionEnabled);
+        Assert.IsFalse(r.PlayerStressEnabled);
+        Assert.IsFalse(r.MateLociEnabled);
+        Assert.IsFalse(r.KnowledgeEnabled);
         Assert.AreEqual(
-            "stress_sources=0 social_relief=0 help_log=0 task_board=0 depots=0 trails=0 huddling=0 shelters=0 mask_stress_input=0 mask_task_signal=0",
+            "stress_sources=0 social_relief=0 help_log=0 task_board=0 depots=0 trails=0 huddling=0 shelters=0 mask_stress_input=0 mask_task_signal=0"
+            + " stress_contagion=0 player_stress=0 mate_loci=0 knowledge=0",
             r.SystemFlagsLabel());
     }
 
@@ -218,9 +223,20 @@ public class RulesDefaultsTests
     {
         var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<SimulationRules>("Assets/Scripts/EntitySystem/AI/SimulationRules.asset");
         Assert.IsNotNull(asset);
-        Assert.IsFalse(asset.StressSourcesEnabled || asset.SocialReliefEnabled || asset.HelpLogEnabled || asset.TaskBoardEnabled);
-        Assert.IsFalse(asset.DepotsEnabled || asset.TrailsEnabled || asset.HuddlingEnabled || asset.SheltersEnabled);
-        Assert.IsFalse(asset.MaskStressInput || asset.MaskTaskSignal);
+        Assert.IsFalse(asset.StressSourcesEnabled, nameof(asset.StressSourcesEnabled));
+        Assert.IsFalse(asset.SocialReliefEnabled, nameof(asset.SocialReliefEnabled));
+        Assert.IsFalse(asset.HelpLogEnabled, nameof(asset.HelpLogEnabled));
+        Assert.IsFalse(asset.TaskBoardEnabled, nameof(asset.TaskBoardEnabled));
+        Assert.IsFalse(asset.DepotsEnabled, nameof(asset.DepotsEnabled));
+        Assert.IsFalse(asset.TrailsEnabled, nameof(asset.TrailsEnabled));
+        Assert.IsFalse(asset.HuddlingEnabled, nameof(asset.HuddlingEnabled));
+        Assert.IsFalse(asset.SheltersEnabled, nameof(asset.SheltersEnabled));
+        Assert.IsFalse(asset.MaskStressInput, nameof(asset.MaskStressInput));
+        Assert.IsFalse(asset.MaskTaskSignal, nameof(asset.MaskTaskSignal));
+        Assert.IsFalse(asset.StressContagionEnabled, nameof(asset.StressContagionEnabled));
+        Assert.IsFalse(asset.PlayerStressEnabled, nameof(asset.PlayerStressEnabled));
+        Assert.IsFalse(asset.MateLociEnabled, nameof(asset.MateLociEnabled));
+        Assert.IsFalse(asset.KnowledgeEnabled, nameof(asset.KnowledgeEnabled));
     }
 
     [Test]

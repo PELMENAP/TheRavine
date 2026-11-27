@@ -16,6 +16,7 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 | `ServiceLocator` | `Assets/Scripts/Core/ServiceLocator/ServiceLocator.cs` | `Services` (by type) and `Players` (`PlayerContainer`) |
 | `SimulationClock` | `Assets/Scripts/Core/SimulationClock.cs` | The only source of simulation time |
 | `WorldAuthority` | `Assets/Scripts/Core/WorldAuthority.cs` | `IsAuthority`, `HasRemotePeers` |
+| `SkyCover` | `Assets/Scripts/Core/SkyCover.cs` | Static cloud cover and rain over the camera, written by `WeatherView`; visuals only |
 | `RavineLogger` | `Assets/Scripts/Core/RavineLogger.cs` | Buffered file log; static facade in `Assets/Scripts/Core/RavineLog.cs` |
 | `WorldRegistry` | `Assets/Scripts/Core/Settings/WorldRegistry.cs` | Create / load / unload / delete / rename / save worlds |
 | `AutosaveCoordinator` | `Assets/Scripts/Core/Settings/WorldData/AutosaveCoordinator.cs` | Autosave loop, `SubscribeBeforeSave` hooks |
@@ -33,13 +34,17 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 6. Service order, roughly: Bootstrap `DayCycle`, `AmbientSystem`; Initial `ObjectSystem`, `EntitySystem`, `MobController`; Loading `MapGenerator`, `MobGenerator`, `UIInventory`, `PauseUI`.
 7. Bootstrap.SwitchToMainMenu saves the world before starting the fade. A failed checkpoint leaves the scene running.
 8. ReleaseServices runs after the fade and before LoadSceneAsync.
-9. `ReleaseServices`: `EntityManager` disabled → `BreakUpServices` → `EntityManager.ReleaseServices` → Netcode `Shutdown` → `ClearAll`. It then runs `InitializeServices` for an explicit return to the menu.
+9. `ReleaseServices`: `EntityManager` disabled → `BreakUpServices` → `EntityManager.ReleaseServices` → Netcode `Shutdown` → `ClearAll`.
+   It then runs `InitializeServices` for an explicit return to the menu.
 10. Each step of `ReleaseServices` is guarded: a failing step is logged and the next ones still run.
 11. The game scene keeps running for several frames after `ReleaseServices`, until the menu scene activates.
 12. `GameInitializer.OnDestroy` (active `Instance` only): `ServiceLocator.ClearAll()` and `RavineLog.Shutdown()`.
 
 ## Services
 
+- New services register in `ServiceLocator`.
+- Legacy static `Instance` classes, not a pattern for new code: `MusicSystem`, `AmbientSystem`, `AudioService`, `SFXSystem`, `UISoundSystem`,
+  `RippleStampSystem`, `GameInitializer`, `FaderOnTransit`, `DialogSystem`.
 - `ServiceContainer.Register` returns `false` on a repeated type or on `null`; it never replaces.
 - All registrations go through `ServiceLocator.Register`, which logs a failure through `RavineLogger`.
 - Scene services leave through `ServiceContainer.Unregister(instance)`, which removes only that instance.
@@ -54,7 +59,8 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 - Repository layer: `IFileManager` in `Assets/Scripts/Core/Storage/IFileManager.cs`.
 - `WorldRegistry` serializes checkpoint requests from autosave, explicit save, pause and orderly scene exit. Before-save hooks bind to the loaded world session.
 - A population provider captures on the main thread before chunk flush. Population publication follows successful player, codex, configuration and chunk saves.
-- `PopulationRepository` stores version 4 in `worlds/{worldId}/population.bin` and reads versions 1–3 (records without stress, help log, or mate and compatibility loci). Seed and world creation time bind the file across renames.
+- `PopulationRepository` stores version 4 in `worlds/{worldId}/population.bin` and reads versions 1–3 (records without stress, help log, or mate and compatibility loci).
+  Seed and world creation time bind the file across renames.
 - A missing file is legacy state. Invalid bounds, references or versions cause a load error and preserve the file. A valid empty file is a saved population.
 - `WorldStateRepository` key `world_data_{id}`; `WorldConfigRepository` key `world_settings_{id}`.
 - `GlobalSettingsRepository` key `global_game_settings`; `ScriptFileManager` key `script_file_{name}`.
@@ -72,6 +78,8 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 - `TimeInvoker` (`Assets/Scripts/Core/Timer/TimeInvoker.cs`): DontDestroyOnLoad singleton, per-frame and per-second events, scaled and unscaled.
 - `SyncedTimer` (`Assets/Scripts/Core/Timer/SyncedTimer.cs`): subscribes to `TimeInvoker`, supports pause.
 - `DayCycle` (`Assets/Scripts/Core/DayCycle.cs`): network day / night, server-written; `FogCycle` (`Assets/Scripts/Core/FogCycle.cs`): fog.
+- `DayCycle.ApplyVisuals` multiplies sun intensity by `1 - SkyCover.Value * cloudDim`; `FogCycle.Apply` multiplies density by `1 + SkyCover.Rain * fogBoost`.
+- `DayCycle` publishes its phase to the static `WorldDayPhase.Value` (`Assets/Scripts/Core/WorldDayPhase.cs`); `WeatherEvent` reads it, because `ObjectSystem` cannot see `DayCycle` (Netcode).
 
 ## Input
 
@@ -92,9 +100,14 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 - `Position2Int.Pack` is the cell and chunk key used across the project.
 - `RavineRandom` is declared in `Assets/Scripts/Model/BehavioursMap/Random/FastRandom.cs`.
 
+## Tooling
+
+- CI: `.github/workflows/unity-tests.yml` compiles the project and runs the EditMode tests on push to `claude/**`; it is skipped without the UNITY_LICENSE secret.
+
 ## Invariants
 
 - Simulation code reads time from `SimulationClock`, never from Unity time.
+- Simulation code never reads `SkyCover`; it is written and read by visuals only.
 - Nothing registers a service by writing into the container directly.
 - `OnDisable` of `Bootstrap` releases services without creating replacements. A repeated release has no effect.
 - `BreakUp` never frees memory that an `Update` of a still-loaded scene object can reach; it stops work and unsubscribes.
