@@ -79,7 +79,8 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 - `SyncedTimer` (`Assets/Scripts/Core/Timer/SyncedTimer.cs`): subscribes to `TimeInvoker`, supports pause.
 - `DayCycle` (`Assets/Scripts/Core/DayCycle.cs`): network day / night, server-written; `FogCycle` (`Assets/Scripts/Core/FogCycle.cs`): fog.
 - `DayCycle.ApplyVisuals` multiplies sun intensity by `1 - SkyCover.Value * cloudDim`; `FogCycle.Apply` multiplies density by `1 + SkyCover.Rain * fogBoost`.
-- `DayCycle` publishes its phase to the static `WorldDayPhase.Value` (`Assets/Scripts/Core/WorldDayPhase.cs`); `WeatherEvent` reads it, because `ObjectSystem` cannot see `DayCycle` (Netcode).
+- `DayCycle` publishes its phase and sun light to `WorldDayPhase.Value` and `WorldDayPhase.Sun` (`Assets/Scripts/Core/WorldDayPhase.cs`).
+- `WeatherEvent` and `WeatherView` read them, because `ObjectSystem` cannot see `DayCycle` (Netcode).
 
 ## Input
 

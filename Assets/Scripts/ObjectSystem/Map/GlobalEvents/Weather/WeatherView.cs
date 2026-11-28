@@ -88,8 +88,6 @@ namespace TheRavine.Generator
         private readonly LightningView _lightning;
         private readonly Texture2D _noise;
         private readonly CloudShadowMap _shadowMap;
-        private Light _sun;
-        private double _nextSunSearch;
         private WindField _windField;
         private int _shaftCount;
         private int _version = -1;
@@ -364,16 +362,7 @@ namespace TheRavine.Generator
         private bool TryGetSunDirection(out float3 toSun)
         {
             Light sun = RenderSettings.sun;
-            if (sun == null)
-            {
-                sun = _sun;
-                double now = Time.unscaledTimeAsDouble;
-                if (sun == null && now >= _nextSunSearch)
-                {
-                    _nextSunSearch = now + 1d;
-                    if (ServiceLocator.Services.TryGet(out DayCycle day)) _sun = sun = day.GetComponent<Light>();
-                }
-            }
+            if (sun == null) sun = WorldDayPhase.Sun;
 
             if (sun == null)
             {

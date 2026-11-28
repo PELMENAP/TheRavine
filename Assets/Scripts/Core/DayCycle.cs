@@ -39,6 +39,7 @@ namespace TheRavine.Base
         {
             ServiceLocator.Register(this);
             sun = GetComponent<Light>();
+            WorldDayPhase.Sun = sun;
             cts = new CancellationTokenSource();
 
             if (IsServer)
