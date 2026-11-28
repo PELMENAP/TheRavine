@@ -48,7 +48,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   chunkGenerationSettings:
     isRiver: 1
-    endlessFlag: 01010100
+    endlessFlag: 01010101
     heightNoiseSettings:
       noiseType: 0
       fractalType: 1
@@ -437,6 +437,7 @@ MonoBehaviour:
     evictionIdleFrames: 120
     evictionScanInterval: 5
     chunkPoolCapacity: 64
+    lookaheadEdgeFraction: 0.35
     ravineHalfWidth: 10000
     ravineWallRun: 100
     ravineWallHeight: 5000
@@ -445,6 +446,8 @@ MonoBehaviour:
     backdropWallRows: 16
     backdropPlateauDepth: 2000
     backdropHazeDensity: 0.00008
+    levelHeight: 1
+    buildStep: 1
     farMaxInstances: 65536
     farShadowDistance: 500
     farRebuildIntervalFrames: 30
@@ -775,6 +778,7 @@ MonoBehaviour:
     evictionIdleFrames: 120
     evictionScanInterval: 5
     chunkPoolCapacity: 64
+    lookaheadEdgeFraction: 0.35
     ravineHalfWidth: 10000
     ravineWallRun: 100
     ravineWallHeight: 5000
@@ -783,6 +787,8 @@ MonoBehaviour:
     backdropWallRows: 16
     backdropPlateauDepth: 2000
     backdropHazeDensity: 0.00008
+    levelHeight: 1
+    buildStep: 1
     farMaxInstances: 65536
     farShadowDistance: 500
     farRebuildIntervalFrames: 30
@@ -794,10 +800,15 @@ MonoBehaviour:
   viewerOffset: {x: 0, y: 0, z: 10}
   grassSystem: {fileID: 3471819257872331844}
   biomeAlbedo: {fileID: 18700000, guid: 9ce74b6359c921548848f1f820a24a2a, type: 2}
-  tickRules: {fileID: 0}
-  nalApplyBudgetMs: 1
-  chunkRequestCapacity: 32
-  waterOffset: {x: 0, y: 5, z: 0}
+  tickRules: {fileID: 11400000, guid: fdffe36e7d7e3f5418600caa186f5be2, type: 2}
+  mapEventRules: {fileID: 11400000, guid: 3bd176ad56d9e4b4a909e6a885a201db, type: 2}
+  fireView:
+    enabled: 1
+    flameMaterial: {fileID: 2100000, guid: ef4ced8e7c6d87e428017a7e541d49ea, type: 2}
+    smokeMaterial: {fileID: 2100000, guid: 40788233971bbec48a6d0e35570545fa, type: 2}
+    lights: 5
+    lightIntensity: 6
+    lightRange: 20
   wildWindView:
     enabled: 1
     compute: {fileID: 7200000, guid: c341bb8a553741f4797d96307db7aef3, type: 3}
@@ -820,6 +831,43 @@ MonoBehaviour:
       noise: 1.5
       speedRange: {x: 4, y: 9}
       maxSteer: 14
+  weatherView:
+    enabled: 1
+    rainMaterial: {fileID: 0}
+    shaftMaterial: {fileID: 0}
+    cloudMaterial: {fileID: 0}
+    dropCount: 12000
+    rainBox: {x: 70, y: 45, z: 70}
+    rainThreshold: 0.02
+    windSmoothing: 2
+    cloudExtent: 5000
+    cloudShadow: 0.55
+    skySmoothing: 1.5
+    coverRadius: 250
+    lightning:
+      boltMaterial: {fileID: 0}
+      maxBolts: 8
+      duration: 0.3
+      boltWidth: 0.7
+      displacement: 0.16
+      lightIntensity: 60
+      lightRange: 90
+      flashRange: 700
+      flashGain: 1
+      flashDecay: 7
+  debugIgniteRadius: 6
+  debugWeatherRadius: 300
+  nalApplyBudgetMs: 1
+  chunkRequestCapacity: 32
+  objectMotion:
+    budget: 64
+    popDuration: 0.2
+    shrinkDuration: 0.15
+    growthDuration: 4
+    growthFraction: 0.8
+  ravineBackdropShader: {fileID: 0}
+  ravineBackdropMaterial: {fileID: 0}
+  waterOffset: {x: 0, y: 5, z: 0}
 --- !u!114 &6195408856844743971
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -899,9 +947,23 @@ MonoBehaviour:
   octaves: 3
   persistence: 0.5
   lacunarity: 2
-  backMargin: 48
   temperatureRange: {x: -1, y: 0, z: 1, w: 2}
   moistureRange: {x: -1, y: 0, z: 1, w: 2}
+  lodMeshes:
+  - {fileID: 4300000, guid: 53a609b0811916efe86ba4ca4b01e48e, type: 2}
+  - {fileID: 4300000, guid: 53a609b0811916efe86ba4ca4b01e48e, type: 2}
+  - {fileID: 4300000, guid: 53a609b0811916efe86ba4ca4b01e48e, type: 2}
+  lodCellSteps: {x: 4, y: 8}
+  lodWidthScales: {x: 2, y: 3}
+  lodBlocksPerFrame: 1
+  drawDistance: 0
+  thinStartDistance: 160
+  thinPower: 1.5
+  thinWiden: 0.5
+  cullMargin: 14
+  replaceMoveStep: 2
+  replaceTurnDegrees: 1
+  shadowDistance: 90
 --- !u!114 &719320706938028729
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -914,4 +976,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61e113457dceefbd3b30aed2f3261017, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  grassMaterial: {fileID: 2100000, guid: 36571ee1032acddecaf946f49784b2d6, type: 2}
+  trampleCompute: {fileID: 7200000, guid: 0ee3081f8e954ddf8fb9275c0927e923, type: 3}
+  trample:
+    texelMeters: 1
+    halfLife: 12
+    stampCapacity: 1024
+    bodyRadius: 0.9
+    referenceBodyEnergy: 100
+    referenceSpeed: 3
+    restFraction: 0.25
+    pressPerSecond: 2

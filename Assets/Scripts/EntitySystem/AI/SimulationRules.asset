@@ -38,12 +38,21 @@ MonoBehaviour:
   - 1
   - 1
   objectSenseRadius: 3
+  objectFuelHeatPerUnit: 8
   objectReach: 1.5
   agentEditRate: 2
   agentEditBurst: 2
   agentEditsPerFrame: 4
   heldObjectSpeedMul: 0.6
   dangerDirectionMinMass: 0.25
+  fireSenseRadius: 12
+  fireStress: 0.6
+  fireDangerMark: 3
+  huntStickMul: 0.5
+  huntLowHpMul: 0.5
+  huntFinishHp: 0.25
+  outnumberedStress: 0.3
+  outnumberedNorm: 3
   startupDelaySeconds: 3
   tickLoopWarmupSeconds: 3
   agentTickInterval: 1
@@ -61,9 +70,38 @@ MonoBehaviour:
   rememberPointMinSpacing: 10
   actionTraceHorizon: 120
   stressTau: 90
+  stressHungerRate: 0.01
+  stressHungerThreshold: 0.4
+  stressColdRate: 0.02
+  lonelinessRadius: 12
+  lonelinessWindow: 30
+  stressLonelyRate: 0.006
+  stressTaskFailure: 0.05
+  stressSmoothTau: 10
+  stressStressedEnter: 0.2
+  stressStressedExit: 0.1
+  stressHighEnter: 0.6
+  stressHighExit: 0.45
+  stressDrainMul: 0.3
+  stressRadiusShrink: 0.3
+  stressDiscountMul: 0.5
+  stressLrMul: 0.5
+  stressLrFloor: 0.3
+  stressAbandonChance: 0.1
   stressNestRecoveryMul: 3
   stressPerceptionNoise: 0.5
   foreignHarmStress: 0.5
+  startleStress: 0.3
+  startleCooldown: 2
+  familiarityTau: 20
+  familiarityGift: 0.5
+  familiarityCalm: 0.6
+  familiarityHuntMul: 1
+  packRadius: 25
+  packRate: 0.6
+  packBoidSeparation: 1
+  packBoidAlignment: 0.8
+  packBoidCohesion: 1
   basalEmitFraction: 0.3
   warmthDrawFraction: 0.2
   warmthCellSize: 4
@@ -131,6 +169,70 @@ MonoBehaviour:
   cameraDistanceMax: 50
   cameraDistanceMin: 10
   cameraTerrainClearance: 2
+  codexMaxLaws: 32
+  codexMaxAxesPerLaw: 3
+  codexMaxDeltaPerAxis: 0.3
+  codexAxisMin:
+  - -0.5
+  - -0.5
+  - -0.5
+  - -0.5
+  - -0.5
+  - -0.5
+  - -0.5
+  - -0.5
+  - -0.5
+  - -0.5
+  - -0.5
+  - -0.5
+  - -0.5
+  - -0.5
+  codexAxisMax:
+  - 0.5
+  - 0.5
+  - 0.5
+  - 0.5
+  - 0.5
+  - 0.5
+  - 0.5
+  - 0.5
+  - 0.5
+  - 0.5
+  - 0.5
+  - 0.5
+  - 0.5
+  - 0.5
+  codexVoteScale: 1
+  codexSupportDecay: 0.0016666667
+  codexInertia: 6
+  codexPruneSupport: 0.05
+  codexFreeBudget: 0.02
+  codexProposeCost: 5
+  codexMinInvest: 1
+  codexPricePrior:
+  - -0.5
+  - 0.3
+  - 0.4
+  - -0.1
+  - 0
+  - -0.05
+  - -0.1
+  - 0
+  - -0.1
+  - -0.05
+  - 0
+  - -0.05
+  - 0.02
+  - 0
+  codexPriceForgetting: 0.98
+  codexPriceMinSamples: 24
+  codexPriceMinExcitation: 0.0001
+  codexPriceInitCov: 10
+  codexWindow: 60
+  codexInvestFraction: 0.05
+  codexPerturbation: 0.1
+  codexMinColonyStore: 20
+  codexTrendEpsilon: 0.002
   kinSearchRangeMul: 2
   nestFarRadiusMul: 3
   poiEnergyEmaAlpha: 0.3
@@ -145,6 +247,16 @@ MonoBehaviour:
   kinDeathStress: 0.5
   simulationLogEnabled: 1
   simulationLogIntervalSeconds: 10
+  behaviourDescriptorsEnabled: 0
+  lifeLogEnabled: 1
+  colonyGenomeMutationChance: 0.5
+  colonyGenomeInitialSpread: 0
+  armSpeechMutedFraction: 0
+  armSpeechShuffledFraction: 0
+  armNullPolicyFraction: 0
+  armBoundedLtcFraction: 0
+  armProgressNoveltyFraction: 0
+  armOrthogonalReservoirFraction: 0
   kinColonyWeight: 0.5
   kinLineageWeight: 0.5
   witnessPenalty: -0.2
@@ -218,11 +330,14 @@ MonoBehaviour:
   soldierCooldownMul: 0.8
   soldierGroupBonusMul: 1.5
   soldierNestFoodCostMul: 1.1
+  soldierRunSpeedMul: 1
+  soldierDetectMul: 1
   workerEatSpeedMul: 1.5
   workerCarryMul: 1.5
   workerDamageTakenMul: 1.3
   nonWorkerStoreEfficiency: 0.8
   scoutLevyAlphaMul: 0.7
+  scoutRangeMul: 1.5
   scoutPoiWeightMul: 2
   scoutCarryMul: 0.6
   nurseSpeedMul: 0.85
@@ -242,6 +357,9 @@ MonoBehaviour:
   predatorUpkeepMul: 0.6
   predatorSpawnDistance: 60
   predatorRespawnInterval: 30
+  predatorFearMul: 0
+  predatorHuntBias: 1.5
+  predatorPackSpread: 8
   trophallaxisMinFill: 0.3
   trophallaxisHungerRelief: 0.3
   recruitCount: 2
@@ -251,10 +369,30 @@ MonoBehaviour:
   quorumMergeRadius: 10
   quorumWindow: 120
   quorumMaxDanger: 0.3
+  quorumMinDistance: 20
+  quorumMaxDistance: 60
+  quorumSlopeLimit: 0.5
+  quorumDepressionMul: 2
+  quorumFoodNorm: 0.2
+  quorumSlopeWeight: 1
+  quorumHeightWeight: 1
+  quorumFoodWeight: 0.5
+  pressureTau: 60
+  pressureFromDamage: 3
+  pressureFromKill: 0.3
+  pressureSoldierGain: 1
+  pressureQuorumRelief: 0.6
+  pressureMigrateBias: 2
+  pressureMigrateMin: 0.5
   nurseAgeEnd: 0.2
   workerAgeEnd: 0.5
   polyethismStimulus: 0.4
   juvenileHealthMul: 0.5
+  reproductionTransferEnabled: 1
+  birthEnergyTransfer: 0.8
+  birthHealthTransfer: 0.8
+  birthParentReserve: 0.05
+  birthChildReserve: 0.05
   territoryMark: 0.2
   territoryThreshold: 0.5
   territoryAlarm: 0.3
@@ -340,6 +478,24 @@ MonoBehaviour:
   scoutVoteWeight: 2
   scarcityChunkRadius: 1
   quorumMigrateBias: 2
+  transplantSchedule: []
+  transplantTrainGuests: 0
+  extraCivilColonies: 0
+  minColonySpacing: 60
+  extraColonyRadius: 200
+  extraColonyCandidates: 32
+  reseedMode: 0
+  reseedWeightSigma: 0.05
+  fissionEnabled: 0
+  fissionMembers: 24
+  fissionShare: 0.5
+  colonySpeechTableEnabled: 0
+  brainDistanceEnabled: 0
+  brainDistanceMaxColonies: 32
+  motifTopK: 0
+  canvasExportEnabled: 0
+  canvasDecay: 0.9
+  canvasTerritorySpan: 0
   eatEnergyFood: 100
   foodRegenBurst: 10
   starvationDamage: 12
@@ -447,6 +603,8 @@ MonoBehaviour:
   interruptionReward: -0.1
   failureReward: -0.2
   ppoClipEpsilon: 0.2
+  gradientConflictEnabled: 0
+  gradientConflictInterval: 8
   rewardClipSigma: 5
   criticLearningRate: 0.004
   criticHuberDelta: 1
@@ -495,6 +653,10 @@ MonoBehaviour:
   epsilonPlateauThresholdGrowth: 1.2
   epsilonPlateauThresholdStep: 0
   reservoirSpectralRadius: 0.9
+  ltcTauMin: 0.0001
+  ltcTauMax: 3.4028235e+38
+  noveltyFastRate: 0.2
+  noveltySlowRate: 0.02
   reservoirHz: 0
   exploreTemperature: 3
   curiosityStorageDamp: 0.5
@@ -686,6 +848,11 @@ MonoBehaviour:
   goalRestWeight: 0.05
   digestRewardWeight: 0
   coordCuriosityWeight: 0.15
+  curiosityEnergyGain: 1
+  curiosityEnergyFloor: 0.6
+  curiosityRarityWeight: 0.1
+  rareActionChance: 0
+  wideSocialExecutor: 0
   execGammaPerSecond: 0.9
   coordGammaPerSecond: 0.97
   epsilonScheduleMode: 0
@@ -784,6 +951,67 @@ MonoBehaviour:
   plannerRadiusMax: 100
   plannerMaxReplans: 2
   plannerReplanAngle: 0.6
+  skillTalentMin: 0.25
+  skillTalentDecay: 2.5
+  skillTalentEuclidShare: 0.65
+  skillPhiRefLevel: 6
+  skillEdgeCostScale: 3.5
+  skillEdgeCostExp: 1.35
+  skillClique3Boost: 1.1
+  skillClique4Boost: 1.4
+  skillCycleMinFactor: 0.25
+  skillCycleScale: 0.35
+  skillLogicScale: 0.6
+  skillLogicOffset: 10
+  skillPruneFocusScale: 0.45
+  skillDecayRate: 0.0016666667
+  skillSavingsFloor: 0.25
+  skillXpLevelOffset: 4
+  skillSolverNormLevel: 100
+  skillSolverIslandBonus: 0.5
+  skillPruneUnusedLevel: 8
+  skillPruneMinSize: 4
+  skillSolverInterval: 30
+  skillSweepInterval: 5
+  skillIslandDropMax: 2
+  skillForestGeneRange: 0.25
+  skillK4Quantile: 0.15
+  skillReplicateInterval: 1
+  skillLevelFixedScale: 100
+  comfortMinStress: 0.25
+  comfortRelief: 0.5
+  comfortSelfShare: 0.3
+  comfortEnergyCost: 2
+  comfortDuration: 3
+  comfortPairCooldown: 20
+  comfortPairWindow: 120
+  comfortPairCap: 0.6
+  comfortTieEpsilon: 0.05
+  comfortReward: 0.5
+  feedRelief: 0.5
+  giveSelfShare: 0.5
+  helpReciprocalWindow: 60
+  giveTransferLoss: 0
+  restReliefRate: 0.004
+  restReliefCap: 0.012
+  helpLogSize: 8
+  helpBalanceTau: 300
+  stressSourcesEnabled: 0
+  socialReliefEnabled: 0
+  helpLogEnabled: 0
+  taskBoardEnabled: 0
+  depotsEnabled: 0
+  trailsEnabled: 0
+  huddlingEnabled: 0
+  sheltersEnabled: 0
+  maskStressInput: 0
+  maskTaskSignal: 0
+  stressHighThreshold: 0.6
+  anomalyLoopWindow: 30
+  anomalyReliefPairThreshold: 1
+  anomalyMinInvestment: 0.001
+  anomalyPairCapacity: 256
+  perturbationSchedule: []
   varianceSpread:
   - 0.25
   - 0.5

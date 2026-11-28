@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: MapEventRules
   m_EditorClassIdentifier: ObjectSystem::TheRavine.Generator.MapEventRules
   fire:
-    ignitionChance: 0.5
+    ignitionChance: 0.001
     seasonBias: 0.5
     stepInterval: 0.5
     maxBurning: 512
@@ -30,3 +30,67 @@ MonoBehaviour:
     spreadMaxReach: 50
     spreadAttemptsPerSize: 10
     spreadMaxAttempts: 20
+    quenchPerSize: 1.6
+    quenchSizeExponent: 1.5
+    rainSpreadDamp: 1
+    rainSlow: 0.7
+    wetIgnitionLimit: 0.7
+  wildWind:
+    bandBottom: 3000
+    bandTop: 4000
+    fadeWidth: 150
+    stepInterval: 0.25
+    gustCount: 24
+    gustRadius: 40
+    gustSpeed: 30
+    driftScale: 1
+    lostTargetSeconds: 3
+    reportCapacity: 256
+    damagePerSecond: 15
+  weather:
+    stepInterval: 0.5
+    maxCells: 16
+    mapSide: 64
+    texelSize: 56
+    convectivePerHour: 90
+    stratiformPerHour: 24
+    heatPeakPhase: 0.82
+    heatWidth: 0.14
+    heatSeasonBias: 0.35
+    spawnSeasonBias: 0.5
+    winterPrecipitation: 0.5
+    upwindShare: 0.6
+    spawnMargin: 128
+    radiusMin: 140
+    radiusMax: 420
+    lifeMin: 45
+    lifeMax: 240
+    lifeMoistureWeight: 0.7
+    driftFactor: 40
+    inertiaSeconds: 20
+    moistureMin: 0.1
+    moistureMax: 1
+    chargeMin: 0.2
+    chargeMax: 1
+    chargeHeatCorrelation: 0.8
+    cloudHeight: 250
+    cloudSpread: 1.4
+    cloudBase: 0.4
+    virgaStrength: 0.8
+    wetnessGain: 0.04
+    wetnessDryPerSecond: 0.004
+    wetnessDryHeat: 1.5
+    wetnessDryWind: 2
+    pressurePerMoisture: 6
+    pressurePerCharge: 10
+    gustStrength: 0.6
+    strikesPerSecond: 0.5
+    strikeThreshold: 0.25
+    groundThreshold: 0.5
+    candidateSamples: 8
+    strikeSpread: 0.8
+    strikeRadius: 24
+    ignitionPerStrike: 0.6
+    strikeDamage: 60
+    creatureStrikeRadius: 3
+    strikeHistory: 64

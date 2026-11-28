@@ -96,8 +96,8 @@ Material:
     - ReflectionGain: 1
     - ReflectionStrength: 1
     - Refraction: 0.02
-    - RippleRefraction: 3
-    - RippleShading: 0.3
+    - RippleRefraction: 10
+    - RippleShading: 1
     - RippleStrength: 20
     - SSRBlur: 0.2
     - SSRDisabled: 0
@@ -114,6 +114,7 @@ Material:
     - Smoothness: 0.9
     - SunGlint: 3
     - SunGlintPower: 2048
+    - Turbidity: 0.1
     - WaterFresnel: 0.01
     - WaterLerp: 0.7
     - _CameraAdd: 1
@@ -136,7 +137,7 @@ Material:
     - _WaveTiling: 1
     m_Colors:
     - Absorption: {r: 0.35, g: 0.08, b: 0.04, a: 1}
-    - DeepColor: {r: 0, g: 0.17962846, b: 2.2872663, a: 1}
+    - DeepColor: {r: 0.039215688, g: 0.16078432, b: 0.2784314, a: 1}
     - FoamColor: {r: 2.2570395, g: 2.2570395, b: 2.2570395, a: 1}
     - ShallowColor: {r: 0.2688679, g: 0.44663343, b: 1, a: 1}
     - UV1: {r: 0.2, g: 0.2, b: 0, a: 0}

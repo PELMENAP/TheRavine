@@ -138,13 +138,14 @@ Material:
     - _HazeRotationSpeed: 0.2
     - _HazeScale: 1
     - _HazeThreshold: 0.161
+    - _LightningSky: 0.6
     - _Metallic: 0
     - _MieAnisotropy: 0.99
     - _MieStrength: 2.9
     - _Mode: 0
     - _MoonFlare: 0.05
     - _MoonSize: -8
-    - _NightBlend: 0.00081785873
+    - _NightBlend: -0.0067239692
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _PhaseLayer1: 0.018

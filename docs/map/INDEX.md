@@ -134,7 +134,7 @@ References are resolved from GUIDs; `+N` is the number of package assemblies out
 | SkillSystem | `Assets/Scripts/Model/EntitySkills` | BehavioursMap, Core +1 |
 | Inventory | `Assets/Scripts/Model/InventoryModel` | BehavioursMap |
 | Netcode | `Assets/Scripts/NetCode` | Core, UniTask +2 |
-| ObjectSystem | `Assets/Scripts/ObjectSystem` | BehavioursMap, Core, EventSystem, Inventory, LitMotion, LitMotion.Extensions, UniTask, UniTask.Addressables, UniTask.Linq +5 |
+| ObjectSystem | `Assets/Scripts/ObjectSystem` | BehavioursMap, Core, EventSystem, Inventory, LitMotion, LitMotion.Extensions, Netcode, UniTask, UniTask.Addressables, UniTask.Linq +5 |
 | Audio | `Assets/Scripts/SFX` | BehavioursMap, Core, LitMotion, UniTask |
 | Info | `Assets/Scripts/ScriptableData/Item` | BehavioursMap, Inventory |
 | Rive | `Assets/Scripts/Terminal/Rive/Core` | Core, UniTask |

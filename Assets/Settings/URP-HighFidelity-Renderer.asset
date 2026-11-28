@@ -86,7 +86,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 870e746bccad45d499dac02f3662c33c, type: 3}
   m_Name: VolumetricFogFeature
   m_EditorClassIdentifier: Assembly-CSharp::VolumetricFogFeature
-  m_Active: 1
+  m_Active: 0
   settings:
     fogMaterial: {fileID: 2100000, guid: 74fe1c83c420485ccb86ad4071a7abd0, type: 2}
     renderPassEvent: 550

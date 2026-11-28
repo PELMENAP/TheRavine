@@ -43,7 +43,7 @@ Material:
     - _MainLightSelfShadowSteps: 1
     - _Steps: 10
     m_Floats:
-    - _AdditionalLightMaxDistance: 50
+    - _AdditionalLightMaxDistance: 150
     - _AdditionalLightScatter: 1
     - _AdditionalLightSelfShadowDistance: 3
     - _Anisotropy: 0.45
@@ -52,7 +52,7 @@ Material:
     - _Density: 0
     - _HeightMaskBlend: 0.99
     - _HeightMaskFalloff: 9.5
-    - _HeightMaskLength: 1.4939306
+    - _HeightMaskLength: 0.0020367536
     - _HeightMaskOffset: 0
     - _HeightMaskRemapMax: 0.8
     - _HeightMaskRemapMin: 0.2

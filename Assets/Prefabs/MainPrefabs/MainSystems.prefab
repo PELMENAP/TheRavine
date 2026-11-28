@@ -1458,10 +1458,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 8476075289225520149}
     m_Modifications:
-    - target: {fileID: 719320706938028729, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: trampleCompute
-      value: 
-      objectReference: {fileID: 7200000, guid: 0ee3081f8e954ddf8fb9275c0927e923, type: 3}
     - target: {fileID: 2172697054823260749, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1503,18 +1499,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: tickRules
-      value: 
-      objectReference: {fileID: 11400000, guid: fdffe36e7d7e3f5418600caa186f5be2, type: 2}
-    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: rippleEffect
-      value: 
-      objectReference: {fileID: 5777932263901799525}
-    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: mapEventRules
-      value: 
-      objectReference: {fileID: 11400000, guid: 3bd176ad56d9e4b4a909e6a885a201db, type: 2}
-    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: terrainFilter
       value: 
       objectReference: {fileID: 3903556155217441569}
@@ -1523,53 +1507,33 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 6118399043195273558}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: fireView.lights
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: terrainTransform
       value: 
       objectReference: {fileID: 6722119735624511312}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: fireView.lightRange
-      value: 20
-      objectReference: {fileID: 0}
+      propertyPath: ravineBackdropShader
+      value: 
+      objectReference: {fileID: 4800000, guid: 57f91ae4fdb64167a01b0ccd881341c9, type: 3}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: fireView.flameMaterial
+      propertyPath: ravineBackdropMaterial
       value: 
-      objectReference: {fileID: 2100000, guid: ef4ced8e7c6d87e428017a7e541d49ea, type: 2}
+      objectReference: {fileID: 2100000, guid: 29c765a659ec10c45b878464009815f2, type: 2}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: fireView.smokeMaterial
+      propertyPath: weatherView.rainMaterial
       value: 
-      objectReference: {fileID: 2100000, guid: 40788233971bbec48a6d0e35570545fa, type: 2}
+      objectReference: {fileID: 2100000, guid: 47be4cf036f1a2743b6dc70be232ed19, type: 2}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: 'chunkGenerationSettings.endlessFlag.Array.data[3]'
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: grassLodShader
+      propertyPath: weatherView.cloudMaterial
       value: 
-      objectReference: {fileID: 7200000, guid: 4d7e9b2a1c8f4e35a6b0d3c7f1e82a54, type: 3}
-    - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: targetTransform
+      objectReference: {fileID: 2100000, guid: 24ad9971379dcd44b9cdc27944bc582e, type: 2}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: weatherView.shaftMaterial
       value: 
-      objectReference: {fileID: 6722119735624511312}
-    - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: targetMeshFilter
+      objectReference: {fileID: 2100000, guid: 47be4cf036f1a2743b6dc70be232ed19, type: 2}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: weatherView.lightning.boltMaterial
       value: 
-      objectReference: {fileID: 3903556155217441569}
-    - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: 'lodMeshes.Array.data[0]'
-      value: 
-      objectReference: {fileID: 4300000, guid: 53a609b0811916efe86ba4ca4b01e48e, type: 2}
-    - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: 'lodMeshes.Array.data[1]'
-      value: 
-      objectReference: {fileID: 4300000, guid: 53a609b0811916efe86ba4ca4b01e48e, type: 2}
-    - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: 'lodMeshes.Array.data[2]'
-      value: 
-      objectReference: {fileID: 4300000, guid: 53a609b0811916efe86ba4ca4b01e48e, type: 2}
+      objectReference: {fileID: 2100000, guid: 1aa5770417c4f6143a2db6f3d2335b92, type: 2}
     - target: {fileID: 7784986139299065775, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: m_Name
       value: MapGenerator
@@ -1795,17 +1759,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6400751825280318941, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
   m_PrefabInstance: {fileID: 7235519633735949683}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &5777932263901799525 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3766957633824667926, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
-  m_PrefabInstance: {fileID: 7235519633735949683}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f954887f861e1e244989c84cbb1f4b9d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: View::RippleEffectOld
 --- !u!4 &6118399043195273558 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3495164147535748133, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
