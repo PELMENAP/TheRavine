@@ -7,6 +7,7 @@ Shader "The Ravine/Weather/Cloud Layer"
         _Scroll ("Drift Speed", Float) = 4
         _Softness ("Edge Softness", Range(0.02, 0.5)) = 0.14
         _Opacity ("Opacity", Range(0, 1)) = 0.92
+        _LowCloudCoreOpacity ("Low Cloud Core Opacity", Range(0, 1)) = 1
 
         [Header(Light)]
         _CloudColor ("Color", Color) = (0.92, 0.94, 0.98, 1)
@@ -52,6 +53,7 @@ Shader "The Ravine/Weather/Cloud Layer"
                 float  _Scroll;
                 float  _Softness;
                 float  _Opacity;
+                float  _LowCloudCoreOpacity;
                 float4 _CloudColor;
                 float4 _StormColor;
                 float  _StormDarken;
@@ -159,7 +161,13 @@ Shader "The Ravine/Weather/Cloud Layer"
                 #endif
 
                 float layerOpacity = layer > 1.5 ? 0.58 : 1.0 - layer * 0.18;
-                return half4(body, density * _Opacity * fade * layerOpacity);
+                float opacity = density * _Opacity * layerOpacity;
+                if (layer < 0.5)
+                {
+                    float core = smoothstep(0.38, 0.55, density);
+                    opacity = max(opacity, core * _LowCloudCoreOpacity);
+                }
+                return half4(body, opacity * fade);
             }
             ENDHLSL
         }

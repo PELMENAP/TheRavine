@@ -28,7 +28,7 @@ Shader "The Ravine/Weather/Rain"
         Tags
         {
             "RenderType" = "Transparent"
-            "Queue" = "Transparent+20"
+            "Queue" = "Transparent+1"
             "RenderPipeline" = "UniversalPipeline"
             "IgnoreProjector" = "True"
         }
