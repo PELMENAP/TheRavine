@@ -82,7 +82,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/ObjectSystem` | 2 | 196 |
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents` | 3 | 196 |
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire` | 3 | 920 |
-| `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather` | 7 | 1589 |
+| `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather` | 9 | 1821 |
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Wind` | 5 | 790 |
 | `Assets/Scripts/ObjectSystem/Map/Tools` | 3 | 2970 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 23 | 4264 |
@@ -118,7 +118,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 948 |
-| `Assets/Tests/EditMode` | 92 | 15479 |
+| `Assets/Tests/EditMode` | 93 | 15543 |
 
 ## Assemblies
 

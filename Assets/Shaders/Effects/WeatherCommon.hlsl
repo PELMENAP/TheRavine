@@ -10,6 +10,9 @@ float4 _WeatherRect;
 float4 _WeatherWind;
 float  _LightningFlash;
 float4 _WeatherShadow;
+TEXTURE2D(_CloudShadowMap);
+SAMPLER(sampler_CloudShadowMap);
+float4 _CloudShadowRect;
 
 static const float2 WeatherCorners[6] =
 {
@@ -52,9 +55,14 @@ float WeatherCloudShade(float3 positionWS)
 {
     float3 toSun = _MainLightPosition.xyz;
     float height = max(_WeatherShadow.y - positionWS.y, 0.0);
-    float2 shift = toSun.xz / max(toSun.y, 0.15) * height;
-    float cloud = SampleWeather(float3(positionWS.x + shift.x, positionWS.y, positionWS.z + shift.y)).cloud;
-    return 1.0 - saturate(cloud * _WeatherShadow.x);
+    float2 at = positionWS.xz + toSun.xz / max(toSun.y, 0.15) * height;
+    if (_CloudShadowRect.z <= 0.0)
+        return 1.0 - saturate(SampleWeather(float3(at.x, positionWS.y, at.y)).cloud * _WeatherShadow.x);
+
+    float2 uv = (at - _CloudShadowRect.xy) / _CloudShadowRect.z;
+    float2 edge = saturate(min(uv, 1.0 - uv) * 12.0);
+    float density = SAMPLE_TEXTURE2D_LOD(_CloudShadowMap, sampler_CloudShadowMap, uv, 0.0).r * (edge.x * edge.y);
+    return 1.0 - saturate(density * _WeatherShadow.x);
 }
 
 uint WeatherHashU(uint x)

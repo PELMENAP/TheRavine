@@ -27,6 +27,10 @@ namespace TheRavine.Generator
         [Range(0f, 1f)] public float cloudShadow = 0.55f;
         [Min(0f)] public float skySmoothing = 1.5f;
         [Min(1f)] public float coverRadius = 250f;
+        [Min(0f)] public float cloudShadowSize = 2048f;
+        [Range(8, 512)] public int cloudShadowResolution = 128;
+        [Min(0.05f)] public float cloudShadowInterval = 0.25f;
+        [Range(64, 1024)] public int cloudNoiseSize = 256;
         public LightningViewSettings lightning = new();
     }
 
@@ -47,6 +51,7 @@ namespace TheRavine.Generator
         private static readonly int ShadowId    = Shader.PropertyToID("_WeatherShadow");
         private static readonly int CloudPlaneId = Shader.PropertyToID("_CloudPlane");
         private static readonly int CloudLayerId = Shader.PropertyToID("_CloudLayer");
+        private static readonly int NoiseId = Shader.PropertyToID("_CloudNoise");
         private const float CloudPresence = 0.01f;
 
         private static readonly ProfilerMarker UploadMarker = new("WeatherView.Upload");
@@ -81,6 +86,10 @@ namespace TheRavine.Generator
         private NativeArray<float2> _windFallback;
         private GraphicsBuffer _shaftBuffer;
         private readonly LightningView _lightning;
+        private readonly Texture2D _noise;
+        private readonly CloudShadowMap _shadowMap;
+        private Light _sun;
+        private double _nextSunSearch;
         private WindField _windField;
         private int _shaftCount;
         private int _version = -1;
@@ -194,6 +203,9 @@ namespace TheRavine.Generator
                 _cloudParams = CreateParams(cloud, _cloudProps[0]);
                 _hasCloud = true;
             }
+            _noise = CloudNoise.Create(math.max(settings.cloudNoiseSize, 64));
+            Shader.SetGlobalTexture(NoiseId, _noise);
+            _shadowMap = CloudShadowMap.TryCreate(settings);
             _lightning = LightningView.TryCreate(weather, settings.lightning);
         }
 
@@ -232,6 +244,7 @@ namespace TheRavine.Generator
                 float dt = SimulationClock.DeltaTime;
                 UpdateWind(eye.xz, dt);
                 UpdateSky(eye.xz, dt);
+                UpdateShadowMap(eye);
                 float time = (float)(SimulationClock.TimeD % TimeWrap);
                 _dropProps.SetFloat(RainTimeId, time);
                 _shaftProps.SetFloat(RainTimeId, time);
@@ -310,30 +323,65 @@ namespace TheRavine.Generator
             float height = math.abs(rules.cloudPlaneY - eye.y);
             if (rules.fairWeatherCover > 0f) height = math.max(height, math.abs(rules.cirrusCloudPlaneY - eye.y));
             float extent = math.max(_settings.cloudExtent, height * 2.5f);
-            float maxDistance = math.sqrt(height * height + 2f * extent * extent);
-            float projectionScale = math.min(1f, camera.farClipPlane * 0.95f / maxDistance);
 
             if (rules.fairWeatherCover > 0f)
             {
-                DrawCloudLayer(camera, eye, time, extent, projectionScale, 2, rules.cirrusCloudPlaneY);
-                DrawCloudLayer(camera, eye, time, extent, projectionScale, 1, rules.middleCloudPlaneY);
+                DrawCloudLayer(camera, eye, time, extent, 2, rules.cirrusCloudPlaneY);
+                DrawCloudLayer(camera, eye, time, extent, 1, rules.middleCloudPlaneY);
             }
-            DrawCloudLayer(camera, eye, time, extent, projectionScale, 0, rules.cloudPlaneY);
+            DrawCloudLayer(camera, eye, time, extent, 0, rules.cloudPlaneY);
         }
 
-        private void DrawCloudLayer(Camera camera, float3 eye, float time, float extent, float projectionScale, int layer, float y)
+        private void DrawCloudLayer(Camera camera, float3 eye, float time, float extent, int layer, float y)
         {
             var rules = _weather.Rules;
             var properties = _cloudProps[layer];
             properties.SetVector(CloudPlaneId, new Vector4(extent, y, time, rules.fairWeatherCover));
-            properties.SetVector(CloudLayerId, new Vector4(projectionScale, layer, rules.cloudClumping, 0f));
+            properties.SetVector(CloudLayerId, new Vector4(layer, rules.cloudClumping, 0f, 0f));
 
             RenderParams draw = _cloudParams;
             draw.camera = camera;
             draw.matProps = properties;
-            draw.worldBounds = new Bounds(eye + new float3(0f, (y - eye.y) * projectionScale, 0f),
-                new Vector3(2f * extent * projectionScale, 16f, 2f * extent * projectionScale));
+            draw.worldBounds = new Bounds(new Vector3(eye.x, y, eye.z), new Vector3(2f * extent, 16f, 2f * extent));
             Graphics.RenderPrimitives(in draw, MeshTopology.Triangles, 6, 1);
+        }
+
+        private void UpdateShadowMap(float3 eye)
+        {
+            if (_shadowMap == null) return;
+
+            var rules = _weather.Rules;
+            if (!_hasCloud || (!_cloudPresent && rules.fairWeatherCover <= 0f))
+            {
+                _shadowMap.Clear();
+                return;
+            }
+
+            bool hasSun = TryGetSunDirection(out float3 toSun);
+            _shadowMap.Update(_cloudParams.material, rules, eye.xz, eye.y, toSun, hasSun);
+        }
+
+        private bool TryGetSunDirection(out float3 toSun)
+        {
+            Light sun = RenderSettings.sun;
+            if (sun == null)
+            {
+                sun = _sun;
+                double now = Time.unscaledTimeAsDouble;
+                if (sun == null && now >= _nextSunSearch)
+                {
+                    _nextSunSearch = now + 1d;
+                    if (ServiceLocator.Services.TryGet(out DayCycle day)) _sun = sun = day.GetComponent<Light>();
+                }
+            }
+
+            if (sun == null)
+            {
+                toSun = float3.zero;
+                return false;
+            }
+            toSun = -(float3)sun.transform.forward;
+            return true;
         }
 
         private void UpdateSky(float2 at, float dt)
@@ -405,6 +453,9 @@ namespace TheRavine.Generator
             Shader.SetGlobalTexture(MapId, Texture2D.blackTexture);
 
             _lightning?.Dispose();
+            _shadowMap?.Dispose();
+            Shader.SetGlobalTexture(NoiseId, Texture2D.blackTexture);
+            if (_noise != null) UnityEngine.Object.Destroy(_noise);
             _shaftBuffer?.Release();
             _shaftBuffer = null;
             if (_texels.IsCreated) _texels.Dispose();

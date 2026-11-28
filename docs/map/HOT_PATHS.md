@@ -108,7 +108,8 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 | Weather field | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather/WeatherFieldJob.cs` | `WeatherFieldJob` (Burst, per texel); test `WeatherFieldJobTests` |
 | Lightning | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather/WeatherEvent.Lightning.cs` | `StrikeStep`, `Strike`, `Record`, `LightningDamageAt`, `TryFindNearestStrike` |
 | Weather math | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather/WeatherMath.cs` | whole file; test `WeatherFieldJobTests.WeatherMathDoesNotAllocate` |
-| Weather rendering | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather/WeatherView.cs` | `Render`, `UploadMap`, `RebuildShafts`, `UpdateSky` |
+| Weather rendering | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather/WeatherView.cs` | `Render`, `UploadMap`, `RebuildShafts`, `UpdateSky`, `UpdateShadowMap` |
+| Cloud shadow | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather/CloudShadowMap.cs` | `Update` (one fullscreen bake per interval) |
 | Lightning rendering | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather/LightningView.cs` | `Render`, `Consume`, `AddBolt`, `UpdateFlash`, `UpdateLight` |
 | Chunk jobs | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs/` | Burst jobs; budgeted by `FrameBudget`, not per frame |
 

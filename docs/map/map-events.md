@@ -102,13 +102,16 @@ Tests: `Assets/Tests/EditMode/FireMathTests.cs`, `Assets/Tests/EditMode/WildWind
 - A second material with keyword `RAIN_SHAFT` draws one camera-facing shaft per cell; its bottom is lifted by the evaporation share.
 - `Assets/Resources/Weather/CloudLayer.shader` draws three world layers at Y = 1000, 2000 and 4000 by default. Rain shafts, lightning and storm shading use the lowest layer.
 - Fair Weather Cover controls background coverage. Cloud Clumping favors broad shapes on the two lower layers. The highest layer uses stretched, warped procedural noise.
-- The quads project inside the perspective camera range. The shader samples world coordinates and tests depth at the actual cloud altitude, clamped to the far plane.
+- The cloud quads are drawn at the far depth (no depth output), so they show only over sky; the shader samples world coordinates.
+- Noise comes from one tileable `R8` texture `_CloudNoise` (`CloudNoise.Create`), shared density code is `Assets/Shaders/Effects/CloudDensity.hlsl`.
+- The two lower layers get volume from the sun-side taps: Beer absorption, powder, silver rim, dark thick cores and one view-parallax tap.
 - Rain and Shaft use the same shader with separate material settings. A blank Shaft field uses the Rain material as its source.
 - In the Editor, changes to the source materials reach their render copies during Play Mode.
 - `LightningView` builds each bolt on the CPU (midpoint displacement, 2 to 3 branches, fixed segment budget) into one `GraphicsBuffer`.
 - `Assets/Resources/Weather/Lightning.shader` draws the bolt as ribbons with return strokes; one pooled point light follows the strokes.
 - `_LightningFlash` is read by the rain, cloud and sky (`Assets/Shaders/Skybox/Skybox.shader`) shaders.
-- Terrain and grass shaders darken the sun term by the cloud channel (`WeatherCloudShade`).
+- `CloudShadowMap` bakes the lowest layer density into a small world-anchored `R8` render texture every `cloudShadowInterval` of `SimulationClock`.
+- Terrain and grass shaders darken the sun term by one read of it (`WeatherCloudShade`, shifted along the sun to the layer); without it they read the map cloud channel.
 - `WeatherView` writes `SkyCover.Value` and `SkyCover.Rain`; `DayCycle.ApplyVisuals` dims the sun, `FogCycle.Apply` thickens the fog.
 - Time is `SimulationClock`: a pause freezes rain.
 
