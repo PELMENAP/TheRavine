@@ -11,6 +11,8 @@ namespace TheRavine.EntityControl
         private const float RisingVelocity   = 0.1f;
         private const float GroundOffset     = 1f;
 
+        private static readonly float MaxWalkableGradientSq = math.pow(math.tan(math.radians(MapGenerator.MaxWalkableSlope)), 2f);
+
         private readonly MapGenerator map;
         private readonly Rigidbody    rb;
         private readonly float        halfHeight;
@@ -18,12 +20,13 @@ namespace TheRavine.EntityControl
         private readonly float        bodyRadius;
         private readonly float        sweepReachSq;
         private float2                obstacleNormal;
-        private float2                previous;
+        private float2                terrainNormal;
+        private Vector3               previous;
         private bool                  hasPrevious;
         private bool                  obstructed;
         private bool                  active;
-        private float                 lastValidX;
-        private float                 lastValidZ;
+        private bool                  terrainUnavailable;
+        private double                lastSupportedTime = double.NegativeInfinity;
 
         public bool IsGrounded { get; private set; }
 
@@ -39,11 +42,23 @@ namespace TheRavine.EntityControl
 
         public void ClipVelocity(ref float x, ref float z)
         {
-            if (!obstructed) return;
-            float into = x * obstacleNormal.x + z * obstacleNormal.y;
+            if (terrainUnavailable)
+            {
+                x = 0f;
+                z = 0f;
+                return;
+            }
+
+            if (obstructed) ClipAgainst(obstacleNormal, ref x, ref z);
+            ClipAgainst(terrainNormal, ref x, ref z);
+        }
+
+        private static void ClipAgainst(float2 normal, ref float x, ref float z)
+        {
+            float into = math.dot(new float2(x, z), normal);
             if (into >= 0f) return;
-            x -= into * obstacleNormal.x;
-            z -= into * obstacleNormal.y;
+            x -= into * normal.x;
+            z -= into * normal.y;
         }
 
         private void ResolveObstacles()
@@ -51,7 +66,7 @@ namespace TheRavine.EntityControl
             Vector3 pos = rb.position;
             float2 xz = new float2(pos.x, pos.z);
             float feet = pos.y - halfHeight + GroundOffset;
-            float2 origin = hasPrevious && math.distancesq(previous, xz) <= sweepReachSq ? previous : xz;
+            float2 origin = hasPrevious ? new float2(previous.x, previous.z) : xz;
             obstructed = map.ResolveObstacles(origin, ref xz, bodyRadius, feet, feet + 2f * halfHeight, maxStepHeight, out obstacleNormal);
             if (!obstructed) return;
 
@@ -62,7 +77,7 @@ namespace TheRavine.EntityControl
             Vector3 velocity = rb.linearVelocity;
             float vx = velocity.x;
             float vz = velocity.z;
-            ClipVelocity(ref vx, ref vz);
+            ClipAgainst(obstacleNormal, ref vx, ref vz);
             velocity.x = vx;
             velocity.z = vz;
             rb.linearVelocity = velocity;
@@ -72,79 +87,140 @@ namespace TheRavine.EntityControl
         {
             active = value;
             hasPrevious = false;
+            IsGrounded = false;
+            lastSupportedTime = double.NegativeInfinity;
         }
 
-        public void ConsumeGround() => IsGrounded = false;
-
-        public void Resolve()
+        public bool TryConsumeJumpSupport(double now, float coyoteTime)
         {
-            if (!active)
+            if (!active || (!IsGrounded && now - lastSupportedTime > coyoteTime)) return false;
+
+            IsGrounded = false;
+            lastSupportedTime = double.NegativeInfinity;
+            rb.useGravity = true;
+            return true;
+        }
+
+        public void Resolve(double now)
+        {
+            obstructed = false;
+            terrainUnavailable = false;
+            terrainNormal = float2.zero;
+            if (!active) return;
+
+            Vector3 position = rb.position;
+            float2 displacement = new float2(position.x - previous.x, position.z - previous.z);
+            if (hasPrevious && math.lengthsq(displacement) > sweepReachSq)
             {
-                obstructed = false;
                 hasPrevious = false;
-                return;
+                IsGrounded = false;
+                lastSupportedTime = double.NegativeInfinity;
             }
 
             ResolveObstacles();
-            ResolveGround();
+            if (!ResolveGround(now)) return;
 
-            Vector3 resolved = rb.position;
-            previous = new float2(resolved.x, resolved.z);
+            previous = rb.position;
             hasPrevious = true;
         }
 
-        private void ResolveGround()
+        private bool TryResolveTerrain(ref Vector3 position, out float height, out float2 gradient)
         {
-            Vector3 pos = rb.position;
-            float surfaceFeet = pos.y - halfHeight + GroundOffset;
-            float ground = map.SampleHeightBilinear(pos.x, pos.z);
-            if (map.SupportObstacles(new float2(pos.x, pos.z), bodyRadius, surfaceFeet, maxStepHeight, out float top) && top > ground)
+            float2 destination = new float2(position.x, position.z);
+            float2 origin = new float2(previous.x, previous.z);
+            if (!hasPrevious || math.all(destination == origin))
+                return map.TrySampleTerrainSurface(destination, out height, out gradient);
+
+            if (!map.TrySampleTerrainSurface(origin, out height, out gradient)) return false;
+
+            float2 travel = destination - origin;
+            float distance = math.length(travel);
+            int steps = (int)math.ceil(distance / (MapGenerator.scale * 0.5f));
+            float2 accepted = origin;
+            float feetOffset = GroundOffset - halfHeight;
+            float previousFeet = previous.y + feetOffset;
+            float feetDelta = position.y - previous.y;
+
+            for (int step = 1; step <= steps; step++)
+            {
+                float fraction = (float)step / steps;
+                float2 point = origin + travel * fraction;
+                if (!map.TrySampleTerrainSurface(point, out float nextHeight, out float2 nextGradient))
+                {
+                    terrainNormal = -travel / distance;
+                    break;
+                }
+
+                float feet = previousFeet + feetDelta * fraction;
+                float priorFeet = previousFeet + feetDelta * ((float)(step - 1) / steps);
+                bool steep = math.lengthsq(nextGradient) > MaxWalkableGradientSq;
+                bool risingTerrain = nextHeight > height || math.dot(nextGradient, point - accepted) > 0f;
+                bool tooHigh = IsGrounded ? nextHeight - previousFeet > maxStepHeight : nextHeight > priorFeet;
+                if (nextHeight > feet && risingTerrain && (steep || tooHigh))
+                {
+                    if (steep && !IsGrounded) lastSupportedTime = double.NegativeInfinity;
+                    float2 downhill = -math.normalizesafe(nextGradient);
+                    terrainNormal = math.dot(downhill, travel) < 0f ? downhill : -travel / distance;
+                    break;
+                }
+
+                accepted = point;
+                height = nextHeight;
+                gradient = nextGradient;
+            }
+
+            position.x = accepted.x;
+            position.z = accepted.y;
+            return true;
+        }
+
+        private bool ResolveGround(double now)
+        {
+            Vector3 originalPosition = rb.position;
+            Vector3 position = originalPosition;
+            Vector3 originalVelocity = rb.linearVelocity;
+            Vector3 velocity = originalVelocity;
+            if (!TryResolveTerrain(ref position, out float ground, out float2 gradient))
+            {
+                terrainUnavailable = true;
+                if (hasPrevious) rb.position = previous;
+                rb.linearVelocity = Vector3.zero;
+                rb.useGravity = false;
+                IsGrounded = false;
+                lastSupportedTime = double.NegativeInfinity;
+                return false;
+            }
+
+            float feet = position.y - halfHeight + GroundOffset;
+            bool walkable = math.lengthsq(gradient) <= MaxWalkableGradientSq;
+            if (map.SupportObstacles(new float2(position.x, position.z), bodyRadius, feet, maxStepHeight, out float top) && top > ground)
+            {
                 ground = top;
-
-            float groundY = ground - GroundOffset;
-            float feetY = pos.y - halfHeight;
-            float penetration = groundY - feetY;
-
-            if (penetration >= 0f)
-            {
-                Vector3 velocity = rb.linearVelocity;
-
-                if (IsGrounded && penetration > maxStepHeight)
-                {
-                    pos.x = lastValidX;
-                    pos.z = lastValidZ;
-                    rb.position = pos;
-                    velocity.x = 0f;
-                    velocity.z = 0f;
-                    rb.linearVelocity = velocity;
-                    return;
-                }
-
-                pos.y += penetration;
-                rb.position = pos;
-                if (velocity.y < 0f)
-                    velocity.y = 0f;
-                rb.linearVelocity = velocity;
-
-                bool rising = velocity.y > RisingVelocity;
-                rb.useGravity = rising;
-                IsGrounded = !rising;
-                if (IsGrounded)
-                {
-                    lastValidX = pos.x;
-                    lastValidZ = pos.z;
-                }
+                walkable = true;
             }
-            else
+
+            float penetration = ground - feet;
+            bool rising = velocity.y > RisingVelocity;
+            bool contact = penetration >= 0f;
+            bool followGround = IsGrounded && penetration >= -GroundedDistance;
+            IsGrounded = walkable && !rising && (contact || followGround);
+
+            if (contact || IsGrounded)
             {
-                rb.useGravity = true;
-                IsGrounded = penetration > -GroundedDistance && rb.linearVelocity.y <= RisingVelocity;
-                if (IsGrounded)
-                {
-                    lastValidX = pos.x;
-                    lastValidZ = pos.z;
-                }
+                position.y += penetration;
+                velocity.y = math.max(0f, velocity.y);
             }
+
+            if (IsGrounded)
+                lastSupportedTime = now;
+            else if (contact && !walkable)
+                lastSupportedTime = double.NegativeInfinity;
+
+            ClipAgainst(terrainNormal, ref velocity.x, ref velocity.z);
+            if (!position.Equals(originalPosition)) rb.position = position;
+            if (!velocity.Equals(originalVelocity)) rb.linearVelocity = velocity;
+            rb.useGravity = !IsGrounded;
+            return true;
         }
     }
 }

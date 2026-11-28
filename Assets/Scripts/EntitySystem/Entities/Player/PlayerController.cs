@@ -44,6 +44,7 @@ namespace TheRavine.EntityControl
 
         [Header("Jump")]
         [SerializeField] private float baseJumpForce = 7f;
+        [SerializeField, Min(0f)] private float coyoteTime = 0.1f;
         [SerializeField] private AnimationCurve jumpForceCurve;
         [SerializeField] private Transform jumpIndicator;
         [SerializeField] private float jumpIndicatorHeight = 1.5f, jumpIndicatorWidth = 0.15f;
@@ -315,7 +316,7 @@ namespace TheRavine.EntityControl
         private void FixedUpdate()
         {
             if (!IsServer) return;
-            terrainResolver?.Resolve();
+            terrainResolver?.Resolve(Time.timeAsDouble);
             StepServerMovement(Time.fixedDeltaTime);
             PublishVitals(Time.fixedDeltaTime);
             PublishSkills();
@@ -584,10 +585,8 @@ namespace TheRavine.EntityControl
         {
             if (!TryConsumeMove()) return;
             if (!math.isfinite(charge)) return;
-            if (terrainResolver == null || !terrainResolver.IsGrounded) return;
-            terrainResolver.ConsumeGround();
-
             double now = Time.timeAsDouble;
+            if (terrainResolver == null || !terrainResolver.TryConsumeJumpSupport(now, coyoteTime)) return;
             charge = JumpChargeLimit.Clamp(charge, now - lastJumpTime, JumpMaxChargeTime, jumpChargeSlack);
             lastJumpTime = now;
 

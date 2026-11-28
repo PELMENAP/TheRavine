@@ -22,6 +22,8 @@ namespace TheRavine.Generator
 
     public partial class MapGenerator
     {
+        public const float MaxWalkableSlope = 70f;
+
         public void BindWaterLevel(float level) => WaterLevel = level;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -48,9 +50,9 @@ namespace TheRavine.Generator
             float2 uphill    = math.normalizesafe(new float2(-normal.x, -normal.z));
             float uphillDot  = math.dot(math.normalize(moveDirection), uphill);
 
-            if (uphillDot > 0f && slopeAngle > 70f) return 0f;
+            if (uphillDot > 0f && slopeAngle > MaxWalkableSlope) return 0f;
 
-            float modifier = 1f - slopeAngle / 70f;
+            float modifier = 1f - slopeAngle / MaxWalkableSlope;
             if (uphillDot < 0f)
                 modifier = math.lerp(modifier, 1f, -uphillDot * 0.25f);
 
@@ -139,6 +141,32 @@ namespace TheRavine.Generator
             float tz = gz - fz;
 
             height = math.lerp(math.lerp(h00, h10, tx), math.lerp(h01, h11, tx), tz);
+            return true;
+        }
+
+        public bool TrySampleTerrainSurface(float2 position, out float height, out float2 gradient)
+        {
+            float2 grid = position * InvScale;
+            float2 cell = math.floor(grid);
+            float2 fraction = grid - cell;
+            int x = (int)cell.x;
+            int z = (int)cell.y;
+            bool upper = fraction.y >= fraction.x;
+
+            if (!TryCellHeight(x, z, out float bottomLeft) ||
+                !TryCellHeight(x + 1, z + 1, out float topRight) ||
+                !TryCellHeight(upper ? x : x + 1, upper ? z + 1 : z, out float corner))
+            {
+                height = 0f;
+                gradient = float2.zero;
+                return false;
+            }
+
+            float2 rise = upper
+                ? new float2(topRight - corner, corner - bottomLeft)
+                : new float2(corner - bottomLeft, topRight - corner);
+            height = bottomLeft + math.dot(fraction, rise);
+            gradient = rise * InvScale;
             return true;
         }
 

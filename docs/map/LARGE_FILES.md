@@ -9,7 +9,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1452 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationLog.cs` | 1296 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1115 |
-| `Assets/Scripts/EntitySystem/Entities/Player/PlayerController.cs` | 1014 |
+| `Assets/Scripts/EntitySystem/Entities/Player/PlayerController.cs` | 1013 |
 | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 859 |
 | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 826 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 778 |
@@ -209,77 +209,77 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/Entities/Player/PlayerController.cs`
 
-- 21–1013 class PlayerController
-  - 127 SetInitialValues
-  - 151 SetUp
-  - 176 ApplyControlType
-  - 197 SavePlayerPosition
-  - 205 DelayedInit
-  - 230 GetPlayerComponents
-  - 246 AttachViewOrientation
-  - 260 InitStatePattern
-  - 270 SetZeroValues
-  - 276 Suspend
-  - 287 Resume
-  - 292 ResetAim
-  - 302 EnableComponents
-  - 308 DisableComponents
-  - 315 FixedUpdate
-  - 324 PublishSkills
-  - 334 PublishVitals
-  - 344 MirrorVitals
-  - 356 StampTrample
-  - 366 Update
-  - 380 UpdateJumpIndicator
-  - 394 IsSprintHeld
-  - 396 Move
-  - 425 CheckBust
-  - 433 MoveServerRpc
-  - 448 StepServerMovement
-  - 532 BroadcastState
-  - 543 StopMoveServerRpc
-  - 554 UpdateClientPositionClientRpc
-  - 562 OnJumpStarted
-  - 568 OnJumpCanceled
-  - 574 TryJump
-  - 582 JumpServerRpc
-  - 601 OnActionStarted
-  - 602 OnActionCanceled
-  - 604 Aim
-  - 638 UpdateAimLevel
-  - 667 SetAimAddition
-  - 679 ChangeAimMode
-  - 681 AimRaiseMobile
-  - 682 AimPlaceMobile
-  - 684 AimRaise
-  - 701 OnViewClick
-  - 703 AimPlace
-  - 710 Placing
-  - 725 RequestPlace
-  - 732 RequestSpeak
-  - 739 SpeakServerRpc
-  - 769 RequestPickUp
-  - 776 RequestCraft
-  - 783 RequestSkillCommand
-  - 792 SkillGraphCommandServerRpc
-  - 799 ApplySkillCommand
-  - 810 SkillTopologyClientRpc
-  - 817 SkillLevelsClientRpc
-  - 827 CraftRequestServerRpc
-  - 840 PlaceRequestServerRpc
-  - 860 PickUpRequestServerRpc
-  - 878 PlaceResultClientRpc
-  - 889 PickUpResultClientRpc
-  - 898 TryResolveEditor
-  - 925 TryConsumeEdit
-  - 927 TryConsumeMove
-  - 935 TryConsumeSkill
-  - 943 TryConsumeCraft
-  - 951 LatencyCompensation
-  - 978 Refuse
-  - 990 OwnerTarget
-  - 996 OnDisable
-  - 967–976 enum EditRefusal
+- 21–1012 class PlayerController
+  - 128 SetInitialValues
+  - 152 SetUp
+  - 177 ApplyControlType
+  - 198 SavePlayerPosition
+  - 206 DelayedInit
+  - 231 GetPlayerComponents
+  - 247 AttachViewOrientation
+  - 261 InitStatePattern
+  - 271 SetZeroValues
+  - 277 Suspend
+  - 288 Resume
+  - 293 ResetAim
+  - 303 EnableComponents
+  - 309 DisableComponents
+  - 316 FixedUpdate
+  - 325 PublishSkills
+  - 335 PublishVitals
+  - 345 MirrorVitals
+  - 357 StampTrample
+  - 367 Update
+  - 381 UpdateJumpIndicator
+  - 395 IsSprintHeld
+  - 397 Move
+  - 426 CheckBust
+  - 434 MoveServerRpc
+  - 449 StepServerMovement
+  - 533 BroadcastState
+  - 544 StopMoveServerRpc
+  - 555 UpdateClientPositionClientRpc
+  - 563 OnJumpStarted
+  - 569 OnJumpCanceled
+  - 575 TryJump
+  - 583 JumpServerRpc
+  - 600 OnActionStarted
+  - 601 OnActionCanceled
+  - 603 Aim
+  - 637 UpdateAimLevel
+  - 666 SetAimAddition
+  - 678 ChangeAimMode
+  - 680 AimRaiseMobile
+  - 681 AimPlaceMobile
+  - 683 AimRaise
+  - 700 OnViewClick
+  - 702 AimPlace
+  - 709 Placing
+  - 724 RequestPlace
+  - 731 RequestSpeak
+  - 738 SpeakServerRpc
+  - 768 RequestPickUp
+  - 775 RequestCraft
+  - 782 RequestSkillCommand
+  - 791 SkillGraphCommandServerRpc
+  - 798 ApplySkillCommand
+  - 809 SkillTopologyClientRpc
+  - 816 SkillLevelsClientRpc
+  - 826 CraftRequestServerRpc
+  - 839 PlaceRequestServerRpc
+  - 859 PickUpRequestServerRpc
+  - 877 PlaceResultClientRpc
+  - 888 PickUpResultClientRpc
+  - 897 TryResolveEditor
+  - 924 TryConsumeEdit
+  - 926 TryConsumeMove
+  - 934 TryConsumeSkill
+  - 942 TryConsumeCraft
+  - 950 LatencyCompensation
+  - 977 Refuse
+  - 989 OwnerTarget
+  - 995 OnDisable
+  - 966–975 enum EditRefusal
 
 ## `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs`
 

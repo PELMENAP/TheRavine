@@ -23,7 +23,7 @@ Open security findings: `docs/audit/security_audit.md`.
 | `TerrainPhysicsResolver` | `Assets/Scripts/EntitySystem/Entities/Player/Components/TerrainPhysicsResolver.cs` | Terrain contact for the player body |
 | `PCController` | `Assets/Scripts/EntitySystem/Entities/Player/PCController.cs` | Mouse and keyboard `IController` |
 | `JoistickController` | `Assets/Scripts/EntitySystem/Entities/Player/JoystickPack/JoistickController.cs` | Touch `IController` |
-| `CameraInputController` | `Assets/Scripts/EntitySystem/CameraInputController.cs` | Camera zoom and 90° turns |
+| `CameraInputController` | `Assets/Scripts/EntitySystem/CameraInputController.cs` | Camera zoom and 90В° turns |
 | `NetworkConnectionManager` | `Assets/Scripts/GameSceneManagerSystem/NetworkConnectionManager.cs` | Starts host / server / client |
 | `NetworkTransportConfig` | `Assets/Scripts/GameSceneManagerSystem/NetworkTransportConfig.cs` | Transport settings |
 | `NetworkUIController` | `Assets/Scripts/GameSceneManagerSystem/NetworkUIController.cs` | Mode and address UI |
@@ -66,10 +66,15 @@ Open security findings: `docs/audit/security_audit.md`.
 ## Player tick
 
 - `TerrainPhysicsResolver.Resolve` first pushes the body out of object shapes (`MapGenerator.ResolveObstacles`, swept from the previous resolved position), then resolves the ground.
-- Ground is `max(terrain height, MapGenerator.SupportObstacles)` with `maxStepHeight` as the step-up tolerance; a body on a shape top keeps its height until it leaves the shape.
+- Terrain contact samples the same triangle split as the near terrain mesh. The resolver checks intervening positions
+  before resolving vertical contact. An uphill crossing into a steep face or into terrain above the allowed step or airborne trajectory clips horizontal movement.
+- Ground is `max(terrain surface, MapGenerator.SupportObstacles)`. Nearby walkable ground can follow an already grounded body down small drops.
+  An unloaded terrain sample stops movement at the last resolved position until data is available.
+- Landing on walkable ground or on an obstacle top grants jump support. The server can consume it once, including within `coyoteTime` after leaving support.
+  Contact with a steep terrain face does not grant support.
 - Feet for both queries are `pos.y - halfHeight + GroundOffset`: the surface height at the body centre, the same frame as the shape bottoms.
 - A displacement beyond `ObstacleQuery.SweepReach` or a `SetActive` call counts as a relocation: no sweep, the previous position is dropped.
-- `StepServerMovement` removes the velocity component directed into the obstacle (`ClipVelocity`), so the player slides along it.
+- `StepServerMovement` removes the velocity component directed into the obstacle or terrain face (`ClipVelocity`), so the player slides along it.
 - Body size: `bodyRadius` and `characterHalfHeight` of `PlayerController`. Collision data: `docs/map/world.md`, section Collision.
 
 - `PlayerEntity` ticks in `EntitySystem.FixedUpdate`: every player on the server, only its own on a client.

@@ -83,7 +83,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 | Agent motion | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | `Step`, `MotionJob`, `MotionApplyJob`, `PositionOf`, `SetPosition`, `VelocityBySlot`, `SyncAtlas` |
 | Move planning | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | `Enqueue`, `Flush`, `PlanJob` |
 | Obstacles | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision/ObstacleQuery.cs` | whole file (`Resolve`, `ResolveSwept`, `Support`, `Walk`); agents, mobs: frame; player: physics step |
-| Player ground | `Assets/Scripts/EntitySystem/Entities/Player/Components/TerrainPhysicsResolver.cs` | `Resolve`, `ResolveObstacles`, `ResolveGround` |
+| Player ground | `Assets/Scripts/EntitySystem/Entities/Player/Components/TerrainPhysicsResolver.cs` | `Resolve`, `ResolveObstacles`, `TryResolveTerrain`, `ResolveGround` |
 | Map obstacle queries | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.Terrain.cs` | `MapGenerator.ResolveObstacles`, `MapGenerator.SupportObstacles` |
 | Mobs | `Assets/Scripts/EntitySystem/Entities/Mob/MobController.cs` | `Update`, `LateUpdate`, `MoveMobsJob`; `HeightAtlas.Covers`, `MotionSystem.PrepareAtlas` |
 | Mimic legs | `Assets/Scripts/EntitySystem/Entities/Mimic/Scripts/MimicLegJob.cs` | whole file |

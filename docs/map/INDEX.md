@@ -53,8 +53,8 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/Entities/Bot/BotBehavious` | 3 | 55 |
 | `Assets/Scripts/EntitySystem/Entities/Mimic/Scripts` | 10 | 986 |
 | `Assets/Scripts/EntitySystem/Entities/Mob` | 4 | 456 |
-| `Assets/Scripts/EntitySystem/Entities/Player` | 7 | 1618 |
-| `Assets/Scripts/EntitySystem/Entities/Player/Components` | 9 | 824 |
+| `Assets/Scripts/EntitySystem/Entities/Player` | 7 | 1617 |
+| `Assets/Scripts/EntitySystem/Entities/Player/Components` | 9 | 900 |
 | `Assets/Scripts/EntitySystem/Entities/Player/JoystickPack` | 2 | 116 |
 | `Assets/Scripts/EntitySystem/Entities/Player/PlayerBehaviours` | 3 | 79 |
 | `Assets/Scripts/EntitySystem/Info` | 1 | 24 |
@@ -85,7 +85,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Weather` | 9 | 1810 |
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Wind` | 5 | 790 |
 | `Assets/Scripts/ObjectSystem/Map/Tools` | 3 | 2970 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 23 | 4264 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 23 | 4292 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs` | 7 | 954 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision` | 7 | 396 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator` | 7 | 1135 |
