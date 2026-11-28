@@ -13,6 +13,7 @@
         [Space(20)]
         [Header(Night and Moon Properties)]
         _MoonDirection("Moon Direction", Vector) = (0,0,0,0)
+        [NoScaleOffset] _MoonTex ("Moon Texture", 2D) = "black" {}
         _MoonSize ("Moon Size Factor", Float) = 5
         _MoonFlare("Moon Flare", Range(0, 1.0)) = 0.03
         _StarSize ("Star Size", Range(10,1000)) = 200
@@ -95,6 +96,7 @@
             CBUFFER_END
 
             float _LightningFlash;
+            TEXTURE2D(_MoonTex); SAMPLER(sampler_MoonTex);
 
             struct appdata 
             {
@@ -245,12 +247,10 @@
 
 					if (moonDistSq < 0.3) 
 					{
-                        float2 moonUV = DirectionalOffset(ray, moonDir) * abs(_MoonSize) * 2.0;
-                        float radius = length(moonUV);
-                        float edge = max(fwidth(radius), 1e-3);
-                        float disc = 1.0 - smoothstep(1.0 - edge, 1.0 + edge, radius);
-                        float limb = sqrt(saturate(1.0 - dot(moonUV, moonUV)));
-                        moonColor = moonFlare + half3(0.8, 0.86, 0.95) * (disc * lerp(0.55, 1.0, limb));
+						moonColor = (half3)moonFlare;
+						float2 moonUV = DirectionalOffset(ray, moonDir);
+						half3 moonTex = SAMPLE_TEXTURE2D_LOD(_MoonTex, sampler_MoonTex, moonUV * _MoonSize + 0.5, 0).rgb;
+						moonColor += moonTex;
 						sunColor = (half3)0.0;
 					}
 
